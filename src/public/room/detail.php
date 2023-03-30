@@ -20,7 +20,7 @@ class RoomDetailPage extends BasePage
             throw new NotFoundException();
 
 
-        $stmt = PDOProvider::get()->prepare("SELECT `surname`, `name`, `employee_id` FROM `employee` WHERE `room`= :roomId ORDER BY `surname`, `name`");
+        $stmt = PDOProvider::get()->prepare("SELECT r.room_id, r.name, r.no, r.phone, e.surname, e.name, e.employee_id FROM employee e JOIN room r WHERE `room`= :roomId ORDER BY e.surname, e.name");
         $stmt->execute(['roomId' => $roomId]);
         $this->employees = $stmt->fetchAll();
 
