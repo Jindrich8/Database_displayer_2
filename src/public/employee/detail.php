@@ -3,7 +3,7 @@ require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
 class EmployeeDetailPage extends BasePage
 {
-    private $employee;
+    private Employee $employee;
     private $room;
     private $keys;
 
@@ -35,9 +35,11 @@ class EmployeeDetailPage extends BasePage
     {
         //prezentovat data
         return MustacheProvider::get()->render(
-            'employeeDetail',
-            ['employee' => $this->employee, 'room' => $this->room, 'keys' => $this->keys]
-        );
+            'employeeDetail',[
+                'employee' => $this->employee, 
+            'room' => $this->room, 'keys' => $this->keys,
+             "admin_bool" => $this->employee->admin === 1 ? 'true' : 'false'
+             ]);
     }
 }
 

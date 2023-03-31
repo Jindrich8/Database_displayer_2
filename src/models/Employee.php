@@ -24,6 +24,7 @@ class Employee
     public const LOGIN = 'login';
     public const PASSWORD = 'password';
     public const ADMIN = 'admin';
+
     public const FIELDS_NO_ID = [
         self::NAME,
         self::SURNAME,
@@ -92,7 +93,7 @@ class Employee
             self::PASSWORD => $this->password,
             self::ROOM => $this->room,
             self::SURNAME => $this->surname,
-            self::ADMIN => $this->admin ? 1 : 0,
+            self::ADMIN => $this->admin,
             self::WAGE => $this->wage,
         ];
     }
