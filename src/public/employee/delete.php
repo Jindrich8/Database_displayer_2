@@ -16,7 +16,7 @@ class EmployeeDeletePage extends CRUDPage
         $success = Employee::deleteByID($employeeId);
 
         //přesměruj
-        $this->redirect(self::ACTION_DELETE, $success);
+        $this->redirect(CrudAction::DELETE, $success);
     }
 
     protected function pageBody()
@@ -28,5 +28,3 @@ class EmployeeDeletePage extends CRUDPage
 
 $page = new EmployeeDeletePage();
 $page->render();
-
-?>

@@ -17,8 +17,14 @@
     </div>
      <div class="form-group">
         <label for="admin">Admin</label>
-        <input type="checkbox" id="admin" name="admin" checked="{{employee.admin}}" required>
+        <input type="checkbox" id="admin" name="admin" value="1" 
+        {{#employee.admin}}checked{{/employee.admin}}>
         {{#errors.admin}}<div class="d-block invalid-feedback">{{errors.admin}}</div>{{/errors.admin}}
+    </div>
+     <div class="form-group">
+        <label for="job">Pozice</label>
+        <input type="text" id="job" name="job" value="{{employee.job}}" required>
+        {{#errors.job}}<div class="d-block invalid-feedback">{{errors.job}}</div>{{/errors.job}}
     </div>
     <div class="form-group">
         <label for="login">Login</label>
@@ -35,8 +41,11 @@
         <fieldset class="form-control">
         <select class="form-control" name="room" id="room">
         {{#rooms}}
-        <option value="{{room_id}}">{{name}}</option>
+        <option value="{{room_id}}">{{name}}({{no}})</option>
         {{/rooms}}
+        {{#activeRoom}}
+        <option value="{{room_id}}">{{name}}({{no}})</option>
+        {{/activeRoom}}
         </select>
         </fieldset>
         {{#errors.room}}<div class="d-block invalid-feedback">{{errors.room}}</div>{{/errors.room}}
@@ -44,14 +53,21 @@
     <div class="form-group">
         <label for="keys">Klíče</label>
         <fieldset class="form-control">
-        {{#rooms}}
+        {{#inactiveKeys}}
         <div>
-        <label for="key{{room_id}}">{{name}}</label>
+        <label for="key{{room_id}}">{{name}}({{no}})</label>
         <input type="checkbox" id="key{{room_id}}" name="keys[]" value="{{room_id}}">
         </div>
-        {{/rooms}}
+        {{/inactiveKeys}}
+        {{#activeKeys}}
+        <div>
+        <label for="key{{room_id}}">{{name}}({{no}})</label>
+        <input type="checkbox" id="key{{room_id}}" name="keys[]" value="{{room_id}}" checked>
+        </div>
+        {{/activeKeys}}
+        <input type="checkbox" id="key___" name="keys[]" value="-1" checked>
         </fieldset>
-        {{#errors.room}}<div class="d-block invalid-feedback">{{errors.room}}</div>{{/errors.room}}
+        {{#errors.keys}}<div class="d-block invalid-feedback">{{errors.keys}}</div>{{/errors.keys}}
     </div>
     {{#employee.employee_id}}<input type="hidden" name="employee_id" value="{{employee.employee_id}}">{{/employee.employee_id}}
 

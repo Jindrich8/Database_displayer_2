@@ -35,11 +35,13 @@ class EmployeeDetailPage extends BasePage
     {
         //prezentovat data
         return MustacheProvider::get()->render(
-            'employeeDetail',[
-                'employee' => $this->employee, 
-            'room' => $this->room, 'keys' => $this->keys,
-             "admin_bool" => $this->employee->admin === 1 ? 'true' : 'false'
-             ]);
+            'employeeDetail',
+            [
+                'employee' => $this->employee,
+                'room' => $this->room, 'keys' => $this->keys,
+                "admin_bool" => $this->employee->admin ? 'true' : 'false'
+            ]
+        );
     }
 }
 

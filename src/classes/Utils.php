@@ -15,4 +15,18 @@ class Utils
     {
         return $str === "";
     }
+
+    public static function filter_input_integers_array(int $type, string $var_name): mixed
+    {
+        $keys = filter_input(INPUT_POST, "keys", FILTER_VALIDATE_INT, FILTER_FORCE_ARRAY);
+        if ($keys) {
+            foreach ($keys as $key) {
+                if (!filter_var($key, FILTER_VALIDATE_INT)) {
+                    $keys = false;
+                    break;
+                }
+            }
+        }
+        return $keys;
+    }
 }

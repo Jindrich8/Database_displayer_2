@@ -3,10 +3,10 @@
 abstract class CRUDPage extends BasePage
 {
 
-    protected function redirect(string $action, bool $success): void
+    protected function redirect(CrudAction $action, bool $success): void
     {
         $data = [
-            'action' => $action,
+            'action' => $action->value,
             'success' => $success ? 1 : 0
         ];
         header('Location: list.php?' . http_build_query($data));

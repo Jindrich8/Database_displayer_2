@@ -16,7 +16,7 @@ class RoomDeletePage extends CRUDPage
         $success = Room::deleteByID($roomId);
 
         //přesměruj
-        $this->redirect(self::ACTION_DELETE, $success);
+        $this->redirect(CrudAction::DELETE, $success);
     }
 
     protected function pageBody()
@@ -28,5 +28,3 @@ class RoomDeletePage extends CRUDPage
 
 $page = new RoomDeletePage();
 $page->render();
-
-?>

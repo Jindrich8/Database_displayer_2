@@ -8,18 +8,19 @@ abstract class ListPage extends CRUDPage
         parent::prepare();
         //pokud přišel výsledek, zachytím ho
         $crudResult = filter_input(INPUT_GET, 'success', FILTER_VALIDATE_INT);
-        $crudAction = CrudAction::tryFrom(filter_input(INPUT_GET, 'action'));
+        $action = filter_input(INPUT_GET, 'action');
+        $crudAction = $action !== null ? CrudAction::tryFrom($action) : null;
 
         if (is_int($crudResult)) {
             $this->alert = [
                 'alertClass' => $crudResult === 0 ? 'danger' : 'success'
             ];
 
-            $this->alert['message'] = $this->getMessage($crudAction,$crudResult !== 0);
+            $this->alert['message'] = $this->getMessage($crudAction, $crudResult !== 0);
         }
     }
 
-    abstract protected function getMessage(CrudAction $action,bool $success):string;
+    abstract protected function getMessage(CrudAction $action, bool $success): string;
 
     abstract protected function getData(): string;
 

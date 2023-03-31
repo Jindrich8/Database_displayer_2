@@ -11,7 +11,7 @@ class Employee
     public ?string $job;
     public ?string $wage;
     public ?int $room;
-    public ?int $admin;
+    public ?bool $admin = false;
     public ?string $login;
     public ?string $password;
 
@@ -43,10 +43,12 @@ class Employee
     private const UPDATE_QUERY = "UPDATE " . self::DB_TABLE
         . " SET `"
         . self::NAME . "` = :" . self::NAME . ", `" .
+        self::SURNAME . "` = :" . self::SURNAME . ", `" .
         self::JOB . "` = :" . self::JOB . ", `" .
-        self::LOGIN . "` = :" . self::LOGIN .
-        self::PASSWORD . "` = :" . self::PASSWORD .
-        self::WAGE . "` = :" . self::WAGE .
+        self::LOGIN . "` = :" . self::LOGIN . ", `" .
+        self::PASSWORD . "` = :" . self::PASSWORD . ", `" .
+        self::ROOM . "` = :" . self::ROOM . ", `" .
+        self::WAGE . "` = :" . self::WAGE . ", `" .
         self::ADMIN . "` = :" . self::ADMIN .
         " WHERE `" . self::ID . "` = :" . self::ID;
 
@@ -61,16 +63,19 @@ class Employee
         . self::LOGIN . ','
         . self::PASSWORD . ','
         . self::WAGE . ','
+        . self::ROOM . ','
         . self::ADMIN . ') VALUES ('
         . ':' . self::NAME . ','
         . ':' . self::JOB . ','
         . ':' . self::SURNAME . ','
         . ':' . self::LOGIN . ','
         . ':' . self::PASSWORD . ','
-        . ':' . self::WAGE . ')';
+        . ':' . self::WAGE . ','
+        . ':' . self::ROOM . ','
+        . ':' . self::ADMIN . ')';
 
 
-    public function __construct(?int $employee_id = null, ?bool $admin = null, ?string $name = null, ?string $surname = null, ?string $job = null, ?string $wage = null, ?int $room = null, ?string $login = null, ?string $password = null)
+    public function __construct(?int $employee_id = null, bool $admin = false, ?string $name = null, ?string $surname = null, ?string $job = null, ?string $wage = null, ?int $room = null, ?string $login = null, ?string $password = null)
     {
         $this->employee_id = $employee_id;
         $this->name = $name;
@@ -93,7 +98,7 @@ class Employee
             self::PASSWORD => $this->password,
             self::ROOM => $this->room,
             self::SURNAME => $this->surname,
-            self::ADMIN => $this->admin,
+            self::ADMIN => $this->admin ? 1 : 0,
             self::WAGE => $this->wage,
         ];
     }
@@ -189,39 +194,39 @@ class Employee
     public function validate(&$errors = []): bool
     {
         if (!isset($this->room))
-            $errors[self::ROOM] = 'Místnost musí být vyplněna';
+            $errors['room'] = 'Místnost musí být vyplněna';
 
         if (!isset($this->login) || !$this->login)
-            $errors[self::LOGIN] = 'Login musí být vyplněn';
+            $errors['login'] = 'Login musí být vyplněn';
 
         if (!isset($this->password) || !$this->password)
-            $errors[self::PASSWORD] = 'Password musí být vyplněno';
+            $errors['password'] = 'Heslo musí být vyplněno';
 
         if (!isset($this->job) || !$this->job)
-            $errors[self::JOB] = 'Job musí být vyplněna';
+            $errors['job'] = 'Pozice musí být vyplněna';
 
         if (!isset($this->wage))
-            $errors[self::WAGE] = 'Wage musí být vyplněna';
+            $errors['wage'] = 'Plat musí být vyplněna';
         elseif ($this->wage < 0) {
-            $errors[self::WAGE] = 'Wage musí být větší nebo rovno 0';
+            $errors['wage'] = 'Plat musí být větší nebo rovno 0';
         }
 
-        if (!isset($this->admin)) {
-            $errors[self::ADMIN] = 'Admin musí být vyplněn';
+        if ($this->admin === null) {
+            $errors['admin'] = 'Admin má neplatnou hodnotu';
         }
 
         if (!isset($this->surname) || !$this->surname)
-            $errors[self::SURNAME] = 'Surname musí být vyplněno';
+            $errors['surname'] = 'Příjmení musí být vyplněno';
 
         if (!isset($this->name) || !$this->name)
-            $errors[self::NAME] = 'Name musí být vyplněno';
+            $errors['name'] = 'Jméno musí být vyplněno';
 
         return count($errors) === 0;
     }
 
     private static function readPostStr($var_name): mixed
     {
-        $res = Utils::filter_input_null_fail(INPUT_POST, $var_name);
+        $res = filter_input(INPUT_POST, $var_name);
         if ($res) {
             $res = trim($res);
         }
@@ -233,8 +238,7 @@ class Employee
     public static function readPost(): self
     {
         $employee = new self();
-        $employee->employee_id = Utils::filter_input_null_fail(INPUT_POST, self::ID, FILTER_VALIDATE_INT);
-
+        $employee->employee_id = filter_input(INPUT_POST, self::ID, FILTER_VALIDATE_INT);
         $employee->name = self::readPostStr(self::NAME);
 
         $employee->surname = self::readPostStr(self::SURNAME);
@@ -243,7 +247,7 @@ class Employee
 
         $employee->password = self::readPostStr(self::PASSWORD);
 
-        $employee->admin = Utils::filter_input_null_fail(INPUT_POST, self::ADMIN, FILTER_VALIDATE_BOOL);
+        $employee->admin = filter_input(INPUT_POST, "admin", FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
         $employee->wage = Utils::filter_input_null_fail(INPUT_POST, self::WAGE, FILTER_VALIDATE_INT);
 

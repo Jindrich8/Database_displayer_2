@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
-class RoomCreatePage extends CreatePage
+class RoomFormActionPage extends FormActionPage
 {
     private ?Room $room;
     private ?array $errors = [];
@@ -28,13 +28,13 @@ class RoomCreatePage extends CreatePage
                 $this->errors = [];
                 $isOk = $this->room->validate($this->errors);
                 if (!$isOk) {
-                    $this->state = self::STATE_FORM_REQUESTED;
+                    $this->state = FormState::FORM_REQUESTED;
                 } else {
                     //ulož je
                     $success = $this->room->insert();
 
                     //přesměruj
-                    $this->redirect(self::ACTION_INSERT, $success);
+                    $this->redirect(CrudAction::INSERT, $success);
                 }
                 break;
         }
@@ -52,7 +52,5 @@ class RoomCreatePage extends CreatePage
     }
 }
 
-$page = new RoomCreatePage();
+$page = new RoomFormActionPage();
 $page->render();
-
-?>

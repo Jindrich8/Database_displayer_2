@@ -1,5 +1,5 @@
 <?php
-abstract class CreatePage extends CRUDPage
+abstract class FormActionPage extends CRUDPage
 {
     protected FormState $state;
 
