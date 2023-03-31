@@ -5,15 +5,15 @@
 class Employee
 {
     public const DB_TABLE = "employee";
-    private ?int $employee_id;
-    private ?string $name;
-    private ?string $surname;
-    private ?string $job;
-    private ?string $wage;
-    private ?int $room;
-    private ?bool $admin;
-    private ?string $login;
-    private ?string $password;
+    public ?int $employee_id;
+    public ?string $name;
+    public ?string $surname;
+    public ?string $job;
+    public ?string $wage;
+    public ?int $room;
+    public ?int $admin;
+    public ?string $login;
+    public ?string $password;
 
     public const ID = 'employee_id';
     public const NAME = 'name';
@@ -52,8 +52,21 @@ class Employee
     private const DELETE_QUERY = "DELETE FROM `" . self::DB_TABLE
         . "` WHERE `" . self::ID . "` = :" . self::ID;
 
-    private const INSERT_QUERY =  $query = "INSERT INTO " . self::DB_TABLE
-        . "(" . implode(",", self::FIELDS_NO_ID) . ") VALUES (:" . implode(", :", self::FIELDS_NO_ID) . ")";
+    private const INSERT_QUERY =  "INSERT INTO " . self::DB_TABLE
+        . "("
+        . self::NAME . ','
+        . self::JOB . ','
+        . self::SURNAME . ','
+        . self::LOGIN . ','
+        . self::PASSWORD . ','
+        . self::WAGE . ','
+        . self::ADMIN . ') VALUES ('
+        . ':' . self::NAME . ','
+        . ':' . self::JOB . ','
+        . ':' . self::SURNAME . ','
+        . ':' . self::LOGIN . ','
+        . ':' . self::PASSWORD . ','
+        . ':' . self::WAGE . ')';
 
 
     public function __construct(?int $employee_id = null, ?bool $admin = null, ?string $name = null, ?string $surname = null, ?string $job = null, ?string $wage = null, ?int $room = null, ?string $login = null, ?string $password = null)
@@ -174,7 +187,7 @@ class Employee
 
     public function validate(&$errors = []): bool
     {
-        if (!isset($this->room) || !$this->room)
+        if (!isset($this->room))
             $errors[self::ROOM] = 'Místnost musí být vyplněna';
 
         if (!isset($this->login) || !$this->login)
@@ -207,17 +220,19 @@ class Employee
 
     private static function readPostStr($var_name): mixed
     {
-        $res = filter_input(INPUT_POST, $var_name);
+        $res = Utils::filter_input_null_fail(INPUT_POST, $var_name);
         if ($res) {
             $res = trim($res);
         }
         return $res;
     }
 
+
+
     public static function readPost(): self
     {
         $employee = new self();
-        $employee->employee_id = filter_input(INPUT_POST, self::ID, FILTER_VALIDATE_INT);
+        $employee->employee_id = Utils::filter_input_null_fail(INPUT_POST, self::ID, FILTER_VALIDATE_INT);
 
         $employee->name = self::readPostStr(self::NAME);
 
@@ -227,13 +242,13 @@ class Employee
 
         $employee->password = self::readPostStr(self::PASSWORD);
 
-        $employee->admin = filter_input(INPUT_POST, self::ADMIN, FILTER_VALIDATE_BOOL);
+        $employee->admin = Utils::filter_input_null_fail(INPUT_POST, self::ADMIN, FILTER_VALIDATE_BOOL);
 
-        $employee->wage = filter_input(INPUT_POST, self::WAGE, FILTER_VALIDATE_INT);
+        $employee->wage = Utils::filter_input_null_fail(INPUT_POST, self::WAGE, FILTER_VALIDATE_INT);
 
         $employee->job = self::readPostStr(self::JOB);
 
-        $employee->room = filter_input(INPUT_POST, self::ROOM, FILTER_VALIDATE_INT);
+        $employee->room = Utils::filter_input_null_fail(INPUT_POST, self::ROOM, FILTER_VALIDATE_INT);
 
         return $employee;
     }

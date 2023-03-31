@@ -1,6 +1,8 @@
 {{#employee}}
 <h1>Detail zaměstnance {{name}} {{surname}}</h1>
+{{/employee}}
 <dl>
+{{#employee}}
     <dt>Jméno</dt>
     <dd>{{name}}</dd>
 
@@ -15,12 +17,17 @@
 
     <dt>Admin</dt>
     <dd>{{admin}}</dd>
+{{/employee}}
+
+    <dt>Místnost</dt>
+    <dd>{{#room}}
+    <a href='room.php?room_id={{room_id}}'>{{rName}}</a>
+    {{/room}}</dd>
 
     <dt>Klíče</dt>
     {{#keys}}
         <dd>
-            <a href='room.php?room_id={{employee_id}}'>{{name}}</a>
+            <a href='room.php?room_id={{room_id}}'>{{name}}</a>
         </dd>
     {{/keys}}
 </dl>
-{{/employee}}

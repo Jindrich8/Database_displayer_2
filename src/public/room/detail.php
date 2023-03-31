@@ -20,12 +20,11 @@ class RoomDetailPage extends BasePage
             throw new NotFoundException();
 
 
-        $stmt = PDOProvider::get()->prepare("SELECT r.room_id, r.name, r.no, r.phone, e.surname, e.name, e.employee_id FROM employee e JOIN room r WHERE `room`= :roomId ORDER BY e.surname, e.name");
+        $stmt = PDOProvider::get()->prepare("SELECT e.surname, e.name, e.employee_id FROM employee e WHERE e.room = :roomId ORDER BY e.surname, e.name");
         $stmt->execute(['roomId' => $roomId]);
         $this->employees = $stmt->fetchAll();
 
         $this->title = "Detail místnosti {$this->room->no}";
-
     }
 
     protected function pageBody()
@@ -36,10 +35,7 @@ class RoomDetailPage extends BasePage
             ['room' => $this->room, 'employees' => $this->employees]
         );
     }
-
 }
 
 $page = new RoomDetailPage();
 $page->render();
-
-?>

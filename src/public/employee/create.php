@@ -1,11 +1,10 @@
 <?php
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
-class EmployeeCreatePage extends CRUDPage
+class EmployeeCreatePage extends CreatePage
 {
     private ?Employee $employee;
     private ?array $errors = [];
-    private int $state;
 
     protected function prepare(): void
     {
@@ -13,33 +12,30 @@ class EmployeeCreatePage extends CRUDPage
         $this->findState();
         $this->title = "Založit nového zaměstnance";
 
-        //když chce formulář
-        if ($this->state === self::STATE_FORM_REQUESTED)
-        {
-            //jdi dál
-            $this->employee = new Employee();
-        }
+        switch ($this->state) {
+                //když chce formulář
+            case FormState::FORM_REQUESTED:
+                $this->employee = new Employee();
+                break;
 
-        //když poslal data
-        elseif($this->state === self::STATE_DATA_SENT) {
-            //načti je
-            $this->employee = Employee::readPost();
+                //když poslal data
+            case FormState::DATA_SENT:
+                //načti je
+                $this->employee = Employee::readPost();
 
-            //zkontroluj je, jinak formulář
-            $this->errors = [];
-            $isOk = $this->employee->validate($this->errors);
-            if (!$isOk)
-            {
-                $this->state = self::STATE_FORM_REQUESTED;
-            }
-            else
-            {
-                //ulož je
-               $success = $this->employee->insert();
+                //zkontroluj je, jinak formulář
+                $this->errors = [];
+                $isOk = $this->employee->validate($this->errors);
+                if (!$isOk) {
+                    $this->state = self::STATE_FORM_REQUESTED;
+                } else {
+                    //ulož je
+                    $success = $this->employee->insert();
 
-                //přesměruj
-               $this->redirect(self::ACTION_INSERT, $success);
-            }
+                    //přesměruj
+                    $this->redirect(self::ACTION_INSERT, $success);
+                }
+                break;
         }
     }
 
@@ -53,15 +49,6 @@ class EmployeeCreatePage extends CRUDPage
             ]
         );
     }
-
-    private function findState() : void
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST')
-            $this->state = self::STATE_DATA_SENT;
-        else
-            $this->state = self::STATE_FORM_REQUESTED;
-    }
-
 }
 
 $page = new EmployeeCreatePage();

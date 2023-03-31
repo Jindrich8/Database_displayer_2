@@ -1,11 +1,10 @@
 <?php
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
-class RoomCreatePage extends CRUDPage
+class RoomCreatePage extends CreatePage
 {
     private ?Room $room;
     private ?array $errors = [];
-    private int $state;
 
     protected function prepare(): void
     {
@@ -13,33 +12,31 @@ class RoomCreatePage extends CRUDPage
         $this->findState();
         $this->title = "Založit novou místnost";
 
-        //když chce formulář
-        if ($this->state === self::STATE_FORM_REQUESTED)
-        {
-            //jdi dál
-            $this->room = new Room();
-        }
+        switch ($this->state) {
+                //když chce formulář
+            case FormState::FORM_REQUESTED:
+                //jdi dál
+                $this->room = new Room();
+                break;
 
-        //když poslal data
-        elseif($this->state === self::STATE_DATA_SENT) {
-            //načti je
-            $this->room = Room::readPost();
+                //když poslal data
+            case FormState::DATA_SENT:
+                //načti je
+                $this->room = Room::readPost();
 
-            //zkontroluj je, jinak formulář
-            $this->errors = [];
-            $isOk = $this->room->validate($this->errors);
-            if (!$isOk)
-            {
-                $this->state = self::STATE_FORM_REQUESTED;
-            }
-            else
-            {
-                //ulož je
-               $success = $this->room->insert();
+                //zkontroluj je, jinak formulář
+                $this->errors = [];
+                $isOk = $this->room->validate($this->errors);
+                if (!$isOk) {
+                    $this->state = self::STATE_FORM_REQUESTED;
+                } else {
+                    //ulož je
+                    $success = $this->room->insert();
 
-                //přesměruj
-               $this->redirect(self::ACTION_INSERT, $success);
-            }
+                    //přesměruj
+                    $this->redirect(self::ACTION_INSERT, $success);
+                }
+                break;
         }
     }
 
@@ -53,15 +50,6 @@ class RoomCreatePage extends CRUDPage
             ]
         );
     }
-
-    private function findState() : void
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST')
-            $this->state = self::STATE_DATA_SENT;
-        else
-            $this->state = self::STATE_FORM_REQUESTED;
-    }
-
 }
 
 $page = new RoomCreatePage();
