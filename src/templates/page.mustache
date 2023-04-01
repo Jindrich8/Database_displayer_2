@@ -13,7 +13,7 @@
     {{{extraHeaders}}}
 
 </head>
-<body class="container">
+<body class="container min-vh-100" style='display:grid; grid-template-rows:auto 1fr auto;'>
 <header style='z-index: 9999;'>
 {{{pageHeader}}}
 </header>
@@ -23,8 +23,8 @@
 {{{pageBody}}}
 </main>
 
-<footer>
-{{{footer}}}
+<footer class="text-center text-lg-start bg-light mg-3 text-muted pt-3 pb-3 w-100" style='min-height: 10vh; left:0; right:0;'>
+{{{pageFooter}}}
 </footer>
 
 </body>

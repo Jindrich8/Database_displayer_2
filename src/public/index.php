@@ -15,7 +15,7 @@ class IndexPage extends BaseLoggedInPage
 
     protected function pageBody()
     {
-        return "Hello World!!!";
+        return "Extrémně zajímavý popis";
     }
 }
 
