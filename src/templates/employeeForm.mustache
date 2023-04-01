@@ -33,7 +33,7 @@
     </div>
     <div class="form-group">
         <label for="password">Heslo</label>
-        <input type="text" class="form-control" id="password" name="password" {{#passwordRequired}} required {{/passwordRequired}}>
+        <input type="password" class="form-control" id="password" name="password" {{#passwordRequired}} required {{/passwordRequired}}>
         {{#errors.password}}<div class="d-block invalid-feedback">{{errors.password}}</div>{{/errors.password}}
     </div>
     <div class="form-group">

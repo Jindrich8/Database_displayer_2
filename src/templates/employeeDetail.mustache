@@ -24,13 +24,13 @@
 
     <dt>Místnost</dt>
     <dd>{{#room}}
-    <a href='room.php?room_id={{room_id}}'>{{rName}}</a>
+    <a href='/room/detail.php?roomId={{room_id}}'>{{rName}}</a>
     {{/room}}</dd>
 
     <dt>Klíče</dt>
     {{#keys}}
         <dd>
-            <a href='room.php?room_id={{room_id}}'>{{name}}</a>
+            <a href='/room/detail.php?roomId={{room_id}}'>{{name}}</a>
         </dd>
     {{/keys}}
 </dl>
