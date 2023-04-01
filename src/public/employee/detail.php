@@ -1,7 +1,8 @@
 <?php
+session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
-class EmployeeDetailPage extends BasePage
+class EmployeeDetailPage extends BaseLoggedInPage
 {
     private Employee $employee;
     private $room;

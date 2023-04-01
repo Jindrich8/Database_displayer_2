@@ -1,8 +1,11 @@
 <?php
+session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
 class EmployeeFormActionPage extends FormActionPage
 {
+    use AdminAuthorization;
+
     private ?Employee $employee;
     private $rooms;
     private $keys;
@@ -33,6 +36,8 @@ class EmployeeFormActionPage extends FormActionPage
                     if ($this->keys == false) {
                         $isOk = false;
                         $this->errors['keys'] = "Vybrány invalidní klíče";
+                    } else if (!in_array($this->employee->room, $this->keys)) {
+                        $this->errors['keys'] = "Zaměstnanec musí mít alespoň klíč ke své místnosti";
                     }
                 }
 
@@ -79,6 +84,7 @@ class EmployeeFormActionPage extends FormActionPage
         return MustacheProvider::get()->render(
             'employeeForm',
             [
+                'title' => $this->title,
                 'employee' => $this->employee,
                 'inactiveRooms' => array_values($this->rooms),
                 'activeRoom' => $activeRoom,

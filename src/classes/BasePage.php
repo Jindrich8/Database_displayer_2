@@ -4,35 +4,41 @@ abstract class BasePage
 {
     protected string $title = "";
 
-    protected function prepare() : void
-    {}
+    protected function authenticate_and_authorize(): void
+    {
+    }
 
-    protected function sendHttpHeaders() : void
-    {}
+    protected function prepare(): void
+    {
+    }
 
-    protected function extraHTMLHeaders() : string
+    protected function sendHttpHeaders(): void
+    {
+    }
+
+    protected function extraHTMLHeaders(): string
     {
         return "";
     }
 
-    protected function pageHeader() : string
+    protected function pageHeader(): string
     {
         $m = MustacheProvider::get();
-        return $m->render('header',[]);
+        return $m->render('header', []);
     }
 
     abstract protected function pageBody();
 
-    protected function pageFooter() : string
+    protected function pageFooter(): string
     {
         $m = MustacheProvider::get();
-        return $m->render('footer',[]);
+        return $m->render('footer', []);
     }
 
-    public function render() : void
+    public function render(): void
     {
-        try
-        {
+        try {
+            $this->authenticate_and_authorize();
             $this->prepare();
             $this->sendHttpHeaders();
 
@@ -45,17 +51,11 @@ abstract class BasePage
                 'pageFooter' => $this->pageFooter()
             ];
             echo $m->render("page", $data);
-        }
-
-        catch (BaseException $e)
-        {
+        } catch (BaseException $e) {
             $exceptionPage = new ExceptionPage($e);
             $exceptionPage->render();
             exit;
-        }
-
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             if (AppConfig::get('debug'))
                 throw $e;
 

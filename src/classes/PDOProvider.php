@@ -3,7 +3,7 @@
 class PDOProvider
 {
     private static ?PDO $instance = null;
-    public static function get() : PDO
+    public static function get(): PDO
     {
         if (self::$instance == null)
             self::initialize();
@@ -11,7 +11,7 @@ class PDOProvider
         return self::$instance;
     }
 
-    private static function initialize() : void
+    private static function initialize(): void
     {
         $host = AppConfig::get("db.host");
         $db = AppConfig::get("db.database");

@@ -11,7 +11,7 @@ class Employee
     public ?string $job;
     public ?string $wage;
     public ?int $room;
-    public ?bool $admin = false;
+    public ?int $admin = 0;
     public ?string $login;
     public ?string $password;
 
@@ -25,54 +25,53 @@ class Employee
     public const PASSWORD = 'password';
     public const ADMIN = 'admin';
 
-    public const FIELDS_NO_ID = [
+    public const FIELDS_NO_ID_PASSWORD = [
         self::NAME,
         self::SURNAME,
         self::JOB,
         self::WAGE,
         self::ROOM,
         self::LOGIN,
-        self::PASSWORD,
         self::ADMIN,
+    ];
+
+    public const FIELDS_NO_ID = [
+        ...self::FIELDS_NO_ID_PASSWORD,
+        self::PASSWORD,
+    ];
+    public const FIELDS_NO_PASSWORD = [
+        self::ID,
+        ...self::FIELDS_NO_ID_PASSWORD
     ];
     public const FIELDS = [
         self::ID,
         ...self::FIELDS_NO_ID
     ];
 
-    private const UPDATE_QUERY = "UPDATE " . self::DB_TABLE
-        . " SET `"
-        . self::NAME . "` = :" . self::NAME . ", `" .
-        self::SURNAME . "` = :" . self::SURNAME . ", `" .
-        self::JOB . "` = :" . self::JOB . ", `" .
-        self::LOGIN . "` = :" . self::LOGIN . ", `" .
-        self::PASSWORD . "` = :" . self::PASSWORD . ", `" .
-        self::ROOM . "` = :" . self::ROOM . ", `" .
-        self::WAGE . "` = :" . self::WAGE . ", `" .
-        self::ADMIN . "` = :" . self::ADMIN .
-        " WHERE `" . self::ID . "` = :" . self::ID;
+    private static function get_delete_query()
+    {
+        return "DELETE FROM `" . self::DB_TABLE
+            . "` WHERE `" . self::ID . "` = :" . self::ID;
+    }
 
-    private const DELETE_QUERY = "DELETE FROM `" . self::DB_TABLE
-        . "` WHERE `" . self::ID . "` = :" . self::ID;
+    private function get_update_query()
+    {
 
-    private const INSERT_QUERY =  "INSERT INTO " . self::DB_TABLE
-        . "("
-        . self::NAME . ','
-        . self::JOB . ','
-        . self::SURNAME . ','
-        . self::LOGIN . ','
-        . self::PASSWORD . ','
-        . self::WAGE . ','
-        . self::ROOM . ','
-        . self::ADMIN . ') VALUES ('
-        . ':' . self::NAME . ','
-        . ':' . self::JOB . ','
-        . ':' . self::SURNAME . ','
-        . ':' . self::LOGIN . ','
-        . ':' . self::PASSWORD . ','
-        . ':' . self::WAGE . ','
-        . ':' . self::ROOM . ','
-        . ':' . self::ADMIN . ')';
+        $fieldsStr = implode(",", array_map(function ($value) {
+            return "`{$value}` = :{$value}";
+        }, ($this->password ? self::FIELDS_NO_ID : self::FIELDS_NO_ID_PASSWORD)));
+
+        return "UPDATE " . self::DB_TABLE . " SET " . $fieldsStr . " WHERE `" . self::ID . "` = :" . self::ID;
+    }
+
+    private static function get_insert_query()
+    {
+        $fieldsStr = "(`" . implode("`,", self::FIELDS_NO_ID) . "`)";
+
+        return "INSERT INTO " . self::DB_TABLE
+            . $fieldsStr . "VALUES "
+            . $fieldsStr;
+    }
 
 
     public function __construct(?int $employee_id = null, bool $admin = false, ?string $name = null, ?string $surname = null, ?string $job = null, ?string $wage = null, ?int $room = null, ?string $login = null, ?string $password = null)
@@ -88,25 +87,20 @@ class Employee
         $this->admin = $admin;
     }
 
-    private function get_fields(bool $include_id)
+    private function get_fields($fields)
     {
-        return [
-            ...($include_id ? [self::ID => $this->employee_id] : []),
-            self::NAME => $this->name,
-            self::LOGIN => $this->login,
-            self::JOB => $this->job,
-            self::PASSWORD => $this->password,
-            self::ROOM => $this->room,
-            self::SURNAME => $this->surname,
-            self::ADMIN => $this->admin ? 1 : 0,
-            self::WAGE => $this->wage,
-        ];
+        $fieldsData = [];
+        foreach ($fields as $field) {
+            $fieldsData[$field] = $this->{$field};
+        }
+        return $fieldsData;
     }
 
     public static function findByID(int $id): ?self
     {
         $pdo = PDOProvider::get();
-        $stmt = $pdo->prepare("SELECT * FROM `" . self::DB_TABLE . "` WHERE `" . self::ID . "`= :" . self::ID);
+        $query =  "SELECT * FROM `" . self::DB_TABLE . "` WHERE `" . self::ID . "`= :" . self::ID;
+        $stmt = $pdo->prepare($query);
         $stmt->execute([self::ID => $id]);
 
         if ($stmt->rowCount() < 1)
@@ -114,6 +108,7 @@ class Employee
 
         $employee = new self();
         $employee->hydrate($stmt->fetch());
+        $employee->employee_id = $id;
         return $employee;
     }
 
@@ -162,8 +157,8 @@ class Employee
 
     public function insert(): bool
     {
-        $stmt = PDOProvider::get()->prepare(self::INSERT_QUERY);
-        $result = $stmt->execute($this->get_fields(false));
+        $stmt = PDOProvider::get()->prepare(self::get_insert_query());
+        $result = $stmt->execute($this->get_fields(self::FIELDS_NO_ID));
         if (!$result)
             return false;
 
@@ -176,8 +171,13 @@ class Employee
         if (!isset($this->employee_id) || !$this->employee_id)
             throw new Exception("Cannot update model without ID");
 
-        $stmt = PDOProvider::get()->prepare(self::UPDATE_QUERY);
-        return $stmt->execute($this->get_fields(true));
+        $stmt = PDOProvider::get()->prepare($this->get_update_query());
+        return $stmt->execute($this->get_fields($this->password ? self::FIELDS : self::FIELDS_NO_PASSWORD));
+    }
+
+    public function set_password($password)
+    {
+        $this->password = password_hash($password, PASSWORD_DEFAULT);
     }
 
     public function delete(): bool
@@ -187,11 +187,11 @@ class Employee
 
     public static function deleteByID(int $employeeId): bool
     {
-        $stmt = PDOProvider::get()->prepare(self::DELETE_QUERY);
+        $stmt = PDOProvider::get()->prepare(self::get_delete_query());
         return $stmt->execute([self::ID => $employeeId]);
     }
 
-    public function validate(&$errors = []): bool
+    public function validate(&$errors = [], bool $passwordRequired = true): bool
     {
         if (!isset($this->room))
             $errors['room'] = 'Místnost musí být vyplněna';
@@ -199,14 +199,14 @@ class Employee
         if (!isset($this->login) || !$this->login)
             $errors['login'] = 'Login musí být vyplněn';
 
-        if (!isset($this->password) || !$this->password)
+        if ($passwordRequired && (!isset($this->password) || !$this->password))
             $errors['password'] = 'Heslo musí být vyplněno';
 
         if (!isset($this->job) || !$this->job)
             $errors['job'] = 'Pozice musí být vyplněna';
 
         if (!isset($this->wage))
-            $errors['wage'] = 'Plat musí být vyplněna';
+            $errors['wage'] = 'Plat musí být vyplněn';
         elseif ($this->wage < 0) {
             $errors['wage'] = 'Plat musí být větší nebo rovno 0';
         }
@@ -246,8 +246,11 @@ class Employee
         $employee->login = self::readPostStr(self::LOGIN);
 
         $employee->password = self::readPostStr(self::PASSWORD);
+        if ($employee->password) {
+            $employee->password = password_hash($employee->password, PASSWORD_DEFAULT);
+        }
 
-        $employee->admin = filter_input(INPUT_POST, "admin", FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+        $employee->admin  = filter_input(INPUT_POST, "admin", FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
         $employee->wage = Utils::filter_input_null_fail(INPUT_POST, self::WAGE, FILTER_VALIDATE_INT);
 

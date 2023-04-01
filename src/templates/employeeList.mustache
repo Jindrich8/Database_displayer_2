@@ -16,11 +16,11 @@
         <td>
             <form action="update.php" method="get" style="display: inline-block">
                 <input type="hidden" name="employeeId" value="{{employee_id}}">
-                <input type="submit" value="Upravit" class="btn btn-info">
+                <input type="submit" value="Upravit" class="btn btn-info" {{^isAdmin}}disabled{{/isAdmin}}>
             </form>
             <form action="delete.php" method="post" style="display: inline-block">
                 <input type="hidden" name="employeeId" value="{{employee_id}}">
-                <input type="submit" value="Smazat" class="btn btn-danger" onclick="return confirm('Opravdu chcete smazat zaměstnance?\nAkce je nevratná!');">
+                <input type="submit" value="Smazat" class="btn btn-danger" {{^isAdmin}}disabled{{/isAdmin}} onclick="return confirm('Opravdu chcete smazat zaměstnance?\nAkce je nevratná!');">
             </form>
         </td>
     </tr>
@@ -31,5 +31,5 @@
 
 </table>
 
-<a href="create.php" class="btn btn-primary">Vytvořit nového zaměstnance</a>
+<a href="create.php" class="btn btn-primary {{^isAdmin}}disabled{{/isAdmin}}" >Vytvořit nového zaměstnance</a>
 

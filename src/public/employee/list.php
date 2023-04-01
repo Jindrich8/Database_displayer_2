@@ -1,8 +1,10 @@
 <?php
+session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
 class EmployeesPage extends ListPage
 {
+
     public function __construct()
     {
         $this->title = "Výpis zaměstnanců";
@@ -12,13 +14,13 @@ class EmployeesPage extends ListPage
     {
         switch ($action) {
             case CrudAction::INSERT:
-                return "Vtvoření zaměstnance bylo " . $success ? "úspěšné" : "neúspěšné";
+                return "Vytvoření zaměstnance bylo " . ($success ? "úspěšné" : "neúspěšné");
             case CrudAction::UPDATE:
-                return "Úprava zaměstnance byla " . $success ? "úspěšná" : "neúspěšná";
+                return "Úprava zaměstnance byla " . ($success ? "úspěšná" : "neúspěšná");
             case CrudAction::DELETE:
-                return "Smazání zaměstnance bylo " . $success ? "úspěšné" : "neúspěšné";
+                return "Smazání zaměstnance bylo " . ($success ? "úspěšné" : "neúspěšné");
         }
-        return "Neznámá " . ($success ? "úspěšná" : "neúspěšná") . "akce";
+        return "Neznámá akce byla " . ($success ? "úspěšná" : "neúspěšná");
     }
 
     protected function getData(): string
@@ -26,7 +28,10 @@ class EmployeesPage extends ListPage
         //získat data
         $employees = Employee::getAll(['name' => 'ASC']);
         //prezentovat data
-        return MustacheProvider::get()->render('employeeList', ['employees' => $employees]);
+        return MustacheProvider::get()->render(
+            'employeeList',
+            ['employees' => $employees, 'isAdmin' => $this->get_user()->admin]
+        );
     }
 }
 

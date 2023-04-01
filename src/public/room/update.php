@@ -1,8 +1,11 @@
 <?php
+session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
 class RoomUpdatePage extends FormActionPage
 {
+    use AdminAuthorization;
+
     private ?Room $room;
     private ?array $errors = [];
 
@@ -51,6 +54,7 @@ class RoomUpdatePage extends FormActionPage
         return MustacheProvider::get()->render(
             'roomForm',
             [
+                'title' => $this->title,
                 'room' => $this->room,
                 'errors' => $this->errors
             ]

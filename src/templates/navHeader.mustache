@@ -1,0 +1,18 @@
+     <h1>Prohlížeč databáze zaměstnanců</h1>
+    <div class="dropdown position-fixed" style='z-index:9999;top:0;right:0'>
+  <a class="btn btn-secondary dropdown-toggle d-inline-flex flex-row" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+    {{loggedUser.name}} {{loggedUser.surname}} <img alt="use icon" src="/resources/person.svg" />
+  </a>
+
+  <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+    <li><a class="dropdown-item" href="/employee/detail.php?employeeId={{loggedUser.employee_id}}">View profile</a></li>
+    <li><a class="dropdown-item" href="/changePassword.php">Change password</a></li>
+    <li><a class="dropdown-item" href="/logout.php">Logout</a></li>
+  </ul>
+</div>
+    <nav>
+        <ul>
+            <li><a href="/room/list.php">Místnosti</a></li>
+            <li><a href="/employee/list.php">Lidé</a></li>
+        </ul>
+    </nav>

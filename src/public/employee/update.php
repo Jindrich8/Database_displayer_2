@@ -1,8 +1,11 @@
 <?php
+session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
 class EmployeeUpdatePage extends FormActionPage
 {
+    use AdminAuthorization;
+
     private ?Employee $employee;
     private ?array $errors = [];
 
@@ -20,7 +23,7 @@ class EmployeeUpdatePage extends FormActionPage
                     throw new BadRequestException();
 
                 //jdi dál
-                $this->employee = Employee::findByID($employeeId);
+                $this->employee = $this->get_user();
                 if (!$this->employee)
                     throw new NotFoundException();
                 break;
@@ -32,13 +35,15 @@ class EmployeeUpdatePage extends FormActionPage
 
                 $this->errors = [];
                 //zkontroluj je, jinak formulář
-                $isOk = $this->employee->validate($this->errors);
-
+                $isOk = $this->employee->validate($this->errors, false);
+                $keys = [];
                 if ($isOk) {
                     $keys = Utils::filter_input_integers_array(INPUT_POST, "keys");
                     if ($keys == false) {
                         $isOk = false;
                         $this->errors['keys'] = "Vybrány invalidní klíče";
+                    } elseif (!in_array($this->employee->room, $keys)) {
+                        $this->errors['keys'] = "Zaměstnanec musí mít alespoň klíč ke své místnosti";
                     }
                 }
 
@@ -66,21 +71,38 @@ class EmployeeUpdatePage extends FormActionPage
 
     protected function pageBody()
     {
-        $stmt = PDOProvider::get()->query("SELECT r.room_id as id, r.room_id, r.name, r.no FROM room r");
-        $rooms =  $stmt->fetchAll(PDO::FETCH_UNIQUE);
+        $activeRoom = null;
+        $inactiveRooms = null;
+        $activeKeys = null;
+        $inactiveKeys = null; {
+            $stmt = PDOProvider::get()->query("SELECT r.room_id as id, r.room_id, r.name, r.no FROM room r");
+            $rooms =  $stmt->fetchAll(PDO::FETCH_UNIQUE); {
+                $keysStmt = PDOProvider::get()->prepare("SELECT r.room_id as id, r.room_id, r.name, r.no FROM room r JOIN `key` k ON r.room_id = k.room WHERE k.employee = :employeeId");
+                $keysStmt->execute(['employeeId' => $this->employee->employee_id]);
+                $keys = $keysStmt->fetchAll(PDO::FETCH_UNIQUE);
+                $activeKeys = array_values($keys);
+                $inactiveKeys = array_values(array_diff_key($rooms, $keys));
+            }
 
-        $keysStmt = PDOProvider::get()->prepare("SELECT r.room_id as id, r.room_id, r.name, r.no FROM room r JOIN `key` k ON r.room_id = k.room WHERE k.employee = :employeeId");
-        $keysStmt->execute(['employeeId' => $this->employee->employee_id]);
-        $keys = $keysStmt->fetchAll(PDO::FETCH_UNIQUE);
+
+            if ($this->employee->room !== null && array_key_exists($this->employee->room, $rooms)) {
+                $activeRoom = $rooms[$this->employee->room];
+                unset($rooms[$this->employee->room]);
+            }
+            $inactiveRooms = array_values($rooms);
+        }
 
         return MustacheProvider::get()->render(
             'employeeForm',
             [
+                'title' => $this->title,
                 'employee' => $this->employee,
-                'rooms' => array_values($rooms),
-                'activeKeys' => array_values($keys),
-                'inactiveKeys' => array_values(array_diff_key($rooms, $keys)),
-                'errors' => $this->errors
+                'inactiveRooms' => $inactiveRooms,
+                'activeRoom' => $activeRoom,
+                'activeKeys' => $activeKeys,
+                'inactiveKeys' => $inactiveKeys,
+                'errors' => $this->errors,
+                "passwordRequired" => false,
             ]
         );
     }
