@@ -2,7 +2,6 @@
 abstract class BaseLoggedInPage extends BasePage
 {
     use Authentication;
-
     private ?Employee $user = null;
 
     protected function get_user(): ?Employee

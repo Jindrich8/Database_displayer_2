@@ -1,12 +1,13 @@
 {
   "app": {
-    "lang" : "cs"
+    "debug": "true",
+    "lang": "cs"
   },
   "db": {
-    "host" : "127.0.0.1",
-    "database" : "ip_3",
-    "charset" : "utf8mb4",
-    "user" : "fill in local config",
-    "password" : "fill in local config"
+    "host": "127.0.0.1",
+    "database": "ip_3",
+    "charset": "utf8mb4",
+    "user": "fill in local config",
+    "password": "fill in local config"
   }
 }

@@ -46,6 +46,7 @@ abstract class BasePage
             $data = [
                 'lang' => AppConfig::get('app.lang'),
                 'title' => $this->title,
+                'extraHeaders' => $this->extraHTMLHeaders(),
                 'pageHeader' => $this->pageHeader(),
                 'pageBody' => $this->pageBody(),
                 'pageFooter' => $this->pageFooter()

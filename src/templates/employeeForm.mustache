@@ -12,13 +12,14 @@
     </div>
     <div class="form-group">
         <label for="wage">Plat</label>
-        <input type="text" class="form-control" id="wage" name="wage" value="{{employee.wage}}" required>
+        <input type="number" class="form-control" id="wage" name="wage" min="0" value="{{employee.wage}}" required>
         {{#errors.wage}}<div class="d-block invalid-feedback">{{errors.wage}}</div>{{/errors.wage}}
     </div>
      <div class="form-group">
         <label for="admin">Admin</label>
         <input type="checkbox" id="admin" name="admin" value="1" 
-        {{#employee.admin}}checked{{/employee.admin}}>
+        {{#employee.admin}}checked{{/employee.admin}} {{#disableAdmin}}disabled{{/disableAdmin}}>
+        {{#disableAdmin}}<input type="hidden" name="admin" value="1">{{/disableAdmin}}
         {{#errors.admin}}<div class="d-block invalid-feedback">{{errors.admin}}</div>{{/errors.admin}}
     </div>
      <div class="form-group">
@@ -37,6 +38,11 @@
         {{#errors.password}}<div class="d-block invalid-feedback">{{errors.password}}</div>{{/errors.password}}
     </div>
     <div class="form-group">
+        <label for="password">Potvrď heslo</label>
+        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" {{#passwordRequired}} required {{/passwordRequired}}>
+        {{#errors.confirmPassword}}<div class="d-block invalid-feedback">{{errors.confirmPassword}}</div>{{/errors.confirmPassword}}
+    </div>
+    <div class="form-group">
         <label for="room">Místnost</label>
         <fieldset class="form-control">
         <select class="form-control" name="room" id="room">
@@ -44,7 +50,7 @@
         <option value="{{room_id}}">{{name}}({{no}})</option>
         {{/inactiveRooms}}
         {{#activeRoom}}
-        <option value="{{room_id}}">{{name}}({{no}})</option>
+        <option value="{{room_id}}" selected>{{name}}({{no}})</option>
         {{/activeRoom}}
         </select>
         {{#errors.room}}<div class="d-block invalid-feedback">{{errors.room}}</div>{{/errors.room}}
@@ -56,8 +62,8 @@
         <fieldset class="form-control">
         {{#inactiveKeys}}
         <div>
-        <label for="key{{room_id}}">{{name}}({{no}})</label>
-        <input type="checkbox" id="key{{room_id}}" name="keys[]" value="{{room_id}}">
+            <label for="key{{room_id}}">{{name}}({{no}})</label>
+            <input type="checkbox" id="key{{room_id}}" name="keys[]" value="{{room_id}}">
         </div>
         {{/inactiveKeys}}
         {{#activeKeys}}
@@ -73,4 +79,5 @@
     {{#employee.employee_id}}<input type="hidden" name="employee_id" value="{{employee.employee_id}}">{{/employee.employee_id}}
 
     <button type="submit" class="btn btn-primary mt-3">Odeslat</button>
+    <a href="/employee/list.php?employeeId={{employee.employee_id}}" class="btn btn-primary mt-3">Zrušit</a>
 </form>

@@ -1,5 +1,8 @@
 {{#room}}
-<h1>Detail místnosti {{no}}</h1>
+<h1 class='d-inline-block'>Detail místnosti {{no}}</h1>
+{{#userIsAdmin}}
+<a href='/room/update.php?roomId={{room_id}}' class='btn edit-btn' aria-label='edit'></a>
+{{/userIsAdmin}}
 <dl>
     <dt>Název</dt>
     <dd>{{name}}</dd>

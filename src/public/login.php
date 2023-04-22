@@ -6,15 +6,16 @@ require_once __DIR__ . "/../bootstrap/bootstrap.php";
 
 class LoginFormActionPage extends BasePage
 {
-    private FormState $state;
     private array $errors = [];
 
     protected function prepare(): void
     {
         parent::prepare();
-        $this->state = Utils::findFormState();
-
-        switch ($this->state) {
+        $id = $_SESSION['id'] ?? null;
+        if ($id && Employee::findByID($id)) {
+            Utils::redirect_to_page('/index.php');
+        }
+        switch (Utils::findFormState()) {
 
             case FormState::DATA_SENT:
                 $login = filter_input(INPUT_POST, 'login');
@@ -28,24 +29,19 @@ class LoginFormActionPage extends BasePage
                 }
 
                 if (!$this->errors) {
-                    $stmt = PDOProvider::get()->prepare(
-                        "SELECT `" . Employee::ID
-                            . '`,`' . Employee::PASSWORD
-                            . '`,`' . Employee::ADMIN
-                            . "` FROM `" . Employee::DB_TABLE . "` WHERE `" . Employee::LOGIN . "` = :username"
+                    $stmt = Utils::select(
+                        pdo: PDOProvider::get(),
+                        columns: [Employee::ID, Employee::PASSWORD],
+                        from: Employee::DB_TABLE,
+                        where: ('`' . Employee::LOGIN . "`=?"),
+                        executeArgs: [$login]
                     );
-
-                    $stmt->execute(['username' => $login]);
-                    $user = $stmt->fetch();
-                    if (!$user || !password_verify($password, $user->password)) {
-                        $this->errors['error'] = "Jméno nebo heslo je nesprávné!";
-                    } else {
+                    if ($stmt && ($user = $stmt->fetch()) && password_verify($password, $user->password)) {
                         $_SESSION['id'] = $user->employee_id;
-                        header("Location: index.php");
+                        Utils::redirect_to_page('/index.php');
+                    } else {
+                        $this->errors['error'] = "Jméno nebo heslo je nesprávné!";
                     }
-                }
-                if ($this->errors) {
-                    $this->state = FormState::FORM_REQUESTED;
                 }
                 break;
         }
@@ -55,7 +51,9 @@ class LoginFormActionPage extends BasePage
     {
         return MustacheProvider::get()->render(
             "loginForm",
-            ["errors"  => $this->errors]
+            [
+                "errors"  => $this->errors
+            ]
         );
     }
 }

@@ -1,18 +1,28 @@
+{{{modal}}}
+<div class='scrollable-table-container'>
 <table class='table table-striped'>
+<thead class="position-sticky top-0">
     <tr>
-        <th>Name</th>
-        <th>Job</th>
-        <th>Wage</th>
-        <th>Actions</th>
+                <th data-sort='{{sorting.name}}' data-sort-indx='{{sortingorder.name}}' data-col='{{colsindexes.name}}'>Jméno</th>
+        {{#columns.job}}<th data-sort='{{sorting.job}}' data-sort-indx='{{sortingorder.job}}' data-col='{{colsindexes.job}}'>Zaměstnání</th>{{/columns.job}}
+        {{#columns.wage}}<th data-sort='{{sorting.wage}}' data-sort-indx='{{sortingorder.wage}}' data-col='{{colsindexes.wage}}'>Plat</th>{{/columns.wage}}
+        {{#columns.room}}<th data-sort='{{sorting.room}}' data-sort-indx='{{sortingorder.room}}' data-col='{{colsindexes.room}}'>Místnost</th>{{/columns.room}}
+        {{#columns.admin}}<th data-sort='{{sorting.admin}}' data-sort-indx='{{sortingorder.admin}}' data-col='{{colsindexes.admin}}'>Admin</th>{{/columns.admin}}
+        {{#columns.login}}<th data-sort='{{sorting.login}}' data-sort-indx='{{sortingorder.login}}' data-col='{{colsindexes.login}}'>Login</th>{{/columns.login}}
+        <th>Akce</th>
     </tr>
-
+    </thead>
+    <tbody>
     {{#employees}}
     <tr>
         <td>
-            <a href='detail.php?employeeId={{employee_id}}'>{{name}} {{surname}}</a>
+            <a href='detail.php?employeeId={{employee_id}}'>{{name}}</a>
         </td>
-        <td>{{job}}</td>
-        <td>{{wage}}</td>
+        {{#columns.job}}<td>{{job}}</td>{{/columns.job}}
+        {{#columns.wage}}<td>{{wage}}</td>{{/columns.wage}}
+        {{#columns.room}}<td><a href='/room/detail.php?roomId={{employees.rRoom_id}}'>{{room}}</a></td>{{/columns.room}}
+        {{#columns.admin}}<td>{{#admin}}true{{/admin}}{{^admin}}false{{/admin}}</td>{{/columns.admin}}
+        {{#columns.login}}<td>{{login}}</td>{{/columns.login}}
         <td>
             <form action="update.php" method="get" style="display: inline-block">
                 <input type="hidden" name="employeeId" value="{{employee_id}}">
@@ -28,8 +38,7 @@
     {{^employees}}
         <tr><td colspan="3">Databáze je prázdná</td></tr>
     {{/employees}}
-
+    </tbody>
 </table>
-
+</div>
 <a href="create.php" class="btn btn-primary {{^isAdmin}}disabled{{/isAdmin}}" >Vytvořit nového zaměstnance</a>
-

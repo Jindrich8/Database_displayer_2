@@ -9,43 +9,39 @@ class RoomUpdatePage extends FormActionPage
     private ?Room $room;
     private ?array $errors = [];
 
-    protected function prepare(): void
+    public function __construct()
     {
-        parent::prepare();
-        $this->findState();
         $this->title = "Upravit místnost";
+    }
 
-        //když chce formulář
-        switch ($this->state) {
-            case FormState::FORM_REQUESTED:
-                $roomId = filter_input(INPUT_GET, 'roomId', FILTER_VALIDATE_INT);
-                if (!$roomId)
-                    throw new BadRequestException();
+    protected function formRequested(): void
+    {
+        $roomId = filter_input(INPUT_GET, 'roomId', FILTER_VALIDATE_INT);
+        if (!$roomId)
+            throw new BadRequestException();
 
-                //jdi dál
-                $this->room = Room::findByID($roomId);
-                if (!$this->room)
-                    throw new NotFoundException();
-                break;
+        //jdi dál
+        $this->room = Room::findByID($roomId);
+        if (!$this->room)
+            throw new NotFoundException();
+    }
 
-                //když poslal data
-            case FormState::DATA_SENT:
-                //načti je
-                $this->room = Room::readPost();
+    protected function formDataSent(): void
+    {
+        //načti je
+        $this->room = Room::readPost();
 
-                //zkontroluj je, jinak formulář
-                $this->errors = [];
-                $isOk = $this->room->validate($this->errors);
-                if (!$isOk) {
-                    $this->state = FormState::FORM_REQUESTED;
-                } else {
-                    //ulož je
-                    $success = $this->room->update();
+        //zkontroluj je, jinak formulář
+        $this->errors = [];
+        $isOk = $this->room->validate($this->errors);
+        if (!$isOk) {
+            $this->state = FormState::FORM_REQUESTED;
+        } else {
+            //ulož je
+            $success = $this->room->update();
 
-                    //přesměruj
-                    $this->redirect(CrudAction::UPDATE, $success);
-                }
-                break;
+            //přesměruj
+            Utils::redirect(Action::UPDATE, Model::ROOM, $this->room->room_id, $success ? null : ErrorCode::Uknown);
         }
     }
 

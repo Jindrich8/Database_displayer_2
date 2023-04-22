@@ -9,37 +9,30 @@ class RoomFormActionPage extends FormActionPage
     private ?Room $room;
     private ?array $errors = [];
 
-    protected function prepare(): void
+    public function __construct()
     {
-        parent::prepare();
-        $this->findState();
         $this->title = "Založit novou místnost";
+    }
 
-        switch ($this->state) {
-                //když chce formulář
-            case FormState::FORM_REQUESTED:
-                //jdi dál
-                $this->room = new Room();
-                break;
+    protected function formRequested(): void
+    {
+        $this->room = new Room();
+    }
 
-                //když poslal data
-            case FormState::DATA_SENT:
-                //načti je
-                $this->room = Room::readPost();
+    protected function formDataSent(): void
+    {
+        //načti je
+        $this->room = Room::readPost();
 
-                //zkontroluj je, jinak formulář
-                $this->errors = [];
-                $isOk = $this->room->validate($this->errors);
-                if (!$isOk) {
-                    $this->state = FormState::FORM_REQUESTED;
-                } else {
-                    //ulož je
-                    $success = $this->room->insert();
+        //zkontroluj je, jinak formulář
+        $this->errors = [];
+        $isOk = $this->room->validate($this->errors);
+        if ($isOk) {
+            //ulož je
+            $success = $this->room->insert();
 
-                    //přesměruj
-                    $this->redirect(CrudAction::INSERT, $success);
-                }
-                break;
+            //přesměruj
+            Utils::redirect(Action::CREATE, Model::ROOM, $this->room->room_id, $success ? null : ErrorCode::Uknown);
         }
     }
 

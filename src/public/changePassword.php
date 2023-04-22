@@ -2,45 +2,35 @@
 session_start();
 require_once __DIR__ . "/../bootstrap/bootstrap.php";
 
-class ChangePasswordActionPage extends BaseLoggedInPage
+class ChangePasswordActionPage extends FormActionPage
 {
-    private FormState $state;
     private array $errors = [];
     private bool $passwordChanged = false;
 
-    protected function prepare(): void
+    protected function formDataSent(): void
     {
-        parent::prepare();
-        $this->state = Utils::findFormState();
+        $password = filter_input(INPUT_POST, 'password');
+        $newPassword = filter_input(INPUT_POST, 'newPassword');
+        $newPassword2 = filter_input(INPUT_POST, 'newPassword2');
 
-        switch ($this->state) {
+        if (!$newPassword) {
+            $this->errors['newPassword'] = "Nové heslo nesmí být prázdné";
+        }
+        if ($newPassword !== $newPassword2) {
+            $this->errors['newPassword2'] = "Nová hesla se musí shodovat";
+        }
 
-            case FormState::DATA_SENT:
+        $employee = $this->get_user();
 
-                $password = filter_input(INPUT_POST, 'password');
-                $newPassword = filter_input(INPUT_POST, 'newPassword');
+        if (!$password) {
+            $this->errors['password'] = "Heslo nesmí být prázdné";
+        } elseif (!password_verify($password, $employee->password)) {
+            $this->errors['password'] = "Heslo je nesprávné";
+        }
 
-                if (!$password) {
-                    $this->errors['password'] = "Heslo nesmí být prázdné";
-                }
-                if (!$newPassword) {
-                    $this->errors['newPassword'] = "Nové heslo nesmí být prázdné";
-                }
-
-                if (!$this->errors) {
-                    $employee = $this->get_user();
-
-                    if (!password_verify($password, $employee->password)) {
-                        $this->errors['password'] = "Heslo je nesprávné";
-                    } else {
-                        $employee->set_password($newPassword);
-                        $employee->update([Employee::PASSWORD]);
-                    }
-                    if ($this->errors) {
-                        $this->state = FormState::FORM_REQUESTED;
-                    }
-                    break;
-                }
+        if (!$this->errors) {
+            $employee->set_password($newPassword);
+            $this->passwordChanged = $employee->update([Employee::PASSWORD]);
         }
     }
 

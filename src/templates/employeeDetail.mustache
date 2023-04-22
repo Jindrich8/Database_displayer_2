@@ -1,5 +1,8 @@
 {{#employee}}
-<h1>Detail zaměstnance {{name}} {{surname}}</h1>
+<h1 class='d-inline-block'>Detail zaměstnance {{name}} {{surname}}</h1>
+{{#userIsAdmin}}
+<a href='/employee/update.php?employeeId={{employee_id}}' class='btn edit-btn' aria-label='edit'></a>
+{{/userIsAdmin}}
 {{/employee}}
 <dl>
 {{#employee}}
@@ -20,7 +23,7 @@
 {{/employee}}
 
     <dt>Admin</dt>
-    <dd>{{admin_bool}}</dd>
+    <dd>{{#employee.admin}}true{{/employee.admin}}{{^employee.admin}}false{{/employee.admin}}</dd>
 
     <dt>Místnost</dt>
     <dd>{{#room}}

@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
-class EmployeeDetailPage extends BaseLoggedInPage
+class EmployeeDetailPage extends DetailPage
 {
     private Employee $employee;
     private $room;
@@ -20,14 +20,32 @@ class EmployeeDetailPage extends BaseLoggedInPage
         $this->employee = Employee::findByID($employeeId);
         if (!$this->employee)
             throw new NotFoundException();
+        $pdo = PDOProvider::get();
+        $this->room = ($roomStmt =  Utils::select(
+            $pdo,
+            columns: ['name' => 'rName', 'room_id'],
+            from: Room::DB_TABLE,
+            fromAlias: 'r',
+            conns: [new JoinConn(
+                join: Employee::DB_TABLE,
+                joinAlias: 'e',
+                on: "r.`room_id`=e.`room`"
+            )],
+            where: "e.`" . Employee::ID . "`=$employeeId"
+        )) ? $roomStmt->fetch() : false;
 
-        $roomStmt = PDOProvider::get()->prepare("SELECT r.name as rName, r.room_id FROM `key` k JOIN room r ON r.room_id = k.room WHERE k.employee = :employeeId");
-        $roomStmt->execute(['employeeId' => $employeeId]);
-        $this->room = $roomStmt->fetch();
-
-        $stmt = PDOProvider::get()->prepare("SELECT r.room_id, r.name FROM room r JOIN `key` k ON r.room_id = k.room WHERE k.employee = :employeeId");
-        $stmt->execute(['employeeId' => $employeeId]);
-        $this->keys = $stmt->fetchAll();
+        $this->keys = ($keysStmt = Utils::select(
+            $pdo,
+            columns: ['room_id', 'name'],
+            from: Room::DB_TABLE,
+            fromAlias: 'r',
+            conns: [new JoinConn(
+                join: 'key',
+                joinAlias: 'k',
+                on: "r.room_id=k.room"
+            )],
+            where: "k.employee = $employeeId"
+        )) ? $keysStmt->fetchAll() : false;
 
         $this->title = "Detail zaměstnance {$this->employee->name} {$this->employee->surname}";
     }
@@ -39,8 +57,10 @@ class EmployeeDetailPage extends BaseLoggedInPage
             'employeeDetail',
             [
                 'employee' => $this->employee,
-                'room' => $this->room, 'keys' => $this->keys,
-                "admin_bool" => $this->employee->admin ? 'true' : 'false'
+                'room' => $this->room,
+                'keys' => $this->keys,
+                "admin" => $this->employee->admin,
+                "userIsAdmin" => $this->get_user()->admin
             ]
         );
     }

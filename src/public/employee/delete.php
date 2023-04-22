@@ -2,32 +2,27 @@
 session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
-class EmployeeDeletePage extends CRUDPage
+class EmployeeDeletePage extends BaseLoggedInPage
 {
     use AdminAuthorization;
 
     protected function prepare(): void
     {
         parent::prepare();
-
+        $errorCode = null;
         $employeeId = filter_input(INPUT_POST, 'employeeId', FILTER_VALIDATE_INT);
-        if (!$employeeId)
+        if (!$employeeId) {
             throw new BadRequestException();
-        if ($employeeId === $_SESSION['id']) {
-            throw new ForbiddenException("You cannot delete yourself");
         }
-
-        //když poslal data
-        $keysStmt = PDOProvider::get()->prepare("SELECT r.room_id FROM room r JOIN `key` k ON r.room_id = k.room WHERE k.employee = :employeeId");
-        $keysStmt->execute(['employeeId' => $employeeId]);
-        if ($keysStmt->rowCount() !== 0) {
-            throw new ForbiddenException("Nemůžeš smazat zaměstnance, který má klíče");
+        if ($employeeId === $this->get_user()->employee_id) {
+            $errorCode = ErrorCode::YouCannotDeleteYourself;
+        } else {
+            if (!Employee::deleteByID($employeeId)) {
+                $errorCode = ErrorCode::Uknown;
+            }
         }
-        $keys = $keysStmt->fetchAll(PDO::FETCH_UNIQUE);
-        $success = Employee::deleteByID($employeeId);
-
         //přesměruj
-        $this->redirect(CrudAction::DELETE, $success);
+        Utils::redirect(Action::DELETE, Model::EMPLOYEE, $employeeId, $errorCode);
     }
 
     protected function pageBody()

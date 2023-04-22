@@ -7,7 +7,7 @@
     </div>
     <div class="form-group">
         <label for="phone">Telefon</label>
-        <input type="text" class="form-control" id="phone" name="phone" value="{{room.phone}}">
+        <input type="text" class="form-control" id="phone" name="phone" value="{{room.phone}}" >
         {{#errors.phone}}<div class="d-block invalid-feedback">{{errors.phone}}</div>{{/errors.phone}}
     </div>
     <div class="form-group">
@@ -18,4 +18,5 @@
     {{#room.room_id}}<input type="hidden" name="room_id" value="{{room.room_id}}">{{/room.room_id}}
 
     <button type="submit" class="btn btn-primary mt-3">Odeslat</button>
+    <a href="/room/list.php?roomId={{room.room_id}}" class="btn btn-primary mt-3">Zrušit</a>
 </form>

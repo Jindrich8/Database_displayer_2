@@ -1,28 +1,92 @@
 <?php
-abstract class ListPage extends CRUDPage
+abstract class ListPage extends BaseLoggedInPage
 {
     private $alert = [];
+    private $columns = [];
+    private $sorting = [];
+
+    protected function extraHTMLHeaders(): string
+    {
+        return parent::extraHTMLHeaders() . "<link rel='stylesheet' href='/styles/listStyle.css' />";
+    }
 
     protected function prepare(): void
     {
         parent::prepare();
         //pokud přišel výsledek, zachytím ho
-        $crudResult = filter_input(INPUT_GET, 'success', FILTER_VALIDATE_INT);
-        $action = filter_input(INPUT_GET, 'action');
-        $crudAction = $action !== null ? CrudAction::tryFrom($action) : null;
+        $operation = Utils::get_last_operation();
+        if ($operation->action !== null) {
 
-        if (is_int($crudResult)) {
+            $subject = null;
+            if ($operation->model !== null && $operation->id !== null) {
+                $template = "alert";
+                switch ($operation->model) {
+                    case Model::EMPLOYEE:
+                        $template .= "Employee";
+                        $employee = Employee::findByID($operation->id);
+                        if ($employee) {
+                            $subject = get_object_vars($employee);
+                        }
+                        break;
+                    case Model::ROOM:
+                        $template .= "Room";
+                        $room = Room::findByID($operation->id);
+                        if ($room) {
+                            $subject = get_object_vars($room);
+                        }
+                        break;
+                }
+                if ($subject) {
+                    $template .= "Subject";
+                    $subject = MustacheProvider::get()->render($template, $subject);
+                }
+            }
             $this->alert = [
-                'alertClass' => $crudResult === 0 ? 'danger' : 'success'
+                'alertClass' => $operation->errorCode !== null ? 'danger' : 'success',
+                'message' => ActionHelper::get_message(
+                    $operation->action,
+                    $operation->model,
+                    $subject,
+                    $operation->errorCode === null
+                ),
+                'reason' => ErrorCodes::get_message($operation->errorCode)
             ];
-
-            $this->alert['message'] = $this->getMessage($crudAction, $crudResult !== 0);
+        }
+        $columns = filter_input(INPUT_GET, 'columns');
+        if ($columns !== null && $columns !== false) {
+            $columns = filter_var_array(explode(',', $columns), FILTER_VALIDATE_INT);
+            foreach ($columns as $column) {
+                $columnNum = filter_var($column, FILTER_VALIDATE_INT);
+                if ($columnNum !== false) {
+                    $columnName = $this->colNumToName($columnNum);
+                    if ($columnName) {
+                        $this->columns[$columnNum] = $columnName;
+                    }
+                }
+            }
+        }
+        $this->transformColumnsBeforeSorting($this->columns);
+        $sorting = filter_input(INPUT_GET, 'sorting');
+        if ($sorting) {
+            foreach (explode(',', $sorting) as $sortValue) {
+                $colNumAndOrder = explode('.', $sortValue);
+                $sortOrder = filter_var($colNumAndOrder[1] ?? null, FILTER_VALIDATE_INT);
+                if ($sortOrder !== false && ($colName = $this->columns[$colNumAndOrder[0]] ?? null)) {
+                    $this->sorting[$colName] = $sortOrder ? 'DESC' : 'ASC';
+                }
+            }
         }
     }
+    /**
+     * @param int[] $columns
+     */
+    abstract protected function getData(array $sorting, array $columns): string;
 
-    abstract protected function getMessage(CrudAction $action, bool $success): string;
+    abstract protected function colNumToName(int $col): ?string;
 
-    abstract protected function getData(): string;
+    protected function transformColumnsBeforeSorting(array &$columns)
+    {
+    }
 
 
     protected function pageBody()
@@ -34,8 +98,6 @@ abstract class ListPage extends CRUDPage
         }
 
         //získat a prezentovat data
-        $html .= $this->getData();
-
-        return $html;
+        return $html . $this->getData($this->sorting, $this->columns);
     }
 }

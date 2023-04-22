@@ -11,6 +11,16 @@ class Room
     public ?string $no;
     public ?string $phone;
 
+    const ID = 'room_id';
+    const NAME = 'name';
+    const NO = 'no';
+    const PHONE = 'phone';
+
+    public const FIELDS_NO_ID_NAME = [
+        self::NO,
+        self::PHONE
+    ];
+
     /**
      * @param int|null $room_id
      * @param string|null $name
@@ -25,136 +35,193 @@ class Room
         $this->phone = $phone;
     }
 
-    public static function findByID(int $id) : ?self
+    public static function create($roomData)
     {
-        $pdo = PDOProvider::get();
-        $stmt = $pdo->prepare("SELECT * FROM `".self::DB_TABLE."` WHERE `room_id`= :roomId");
-        $stmt->execute(['roomId' => $id]);
-
-        if ($stmt->rowCount() < 1)
-            return null;
-
         $room = new self();
-        $room->hydrate($stmt->fetch());
+        $room->hydrate($roomData);
+        return $room;
+    }
+
+    public static function findByID(int $id): ?self
+    {
+        $room = null;
+        if ($stmt = Utils::select(pdo: PDOProvider::get(), columns: [], from: self::DB_TABLE, where: "`room_id`=$id")) {
+            if ($roomData = $stmt->fetch()) {
+                $room = self::create($roomData);
+            }
+        }
         return $room;
     }
 
     /**
      * @return Room[]
      */
-    public static function getAll($sorting = []) : array
+    public static function getAll($sorting = []): array
     {
-        $sortSQL = "";
-        if (count($sorting))
-        {
-            $SQLchunks = [];
-            foreach ($sorting as $field => $direction)
-                $SQLchunks[] = "`{$field}` {$direction}";
-
-            $sortSQL = " ORDER BY " . implode(', ', $SQLchunks);
-        }
-
-        $pdo = PDOProvider::get();
-        $stmt = $pdo->prepare("SELECT * FROM `".self::DB_TABLE."`" . $sortSQL);
-        $stmt->execute([]);
+        $stmt = Utils::select(pdo: PDOProvider::get(), columns: [], from: self::DB_TABLE, sorting: $sorting);
 
         $rooms = [];
-        while ($roomData = $stmt->fetch())
-        {
-            $room = new Room();
-            $room->hydrate($roomData);
-            $rooms[] = $room;
+        if ($stmt) {
+            while ($roomData = $stmt->fetch()) {
+                $rooms[] = self::create($roomData);
+            }
         }
 
         return $rooms;
     }
 
+
+
+    public function getPhoneInDbFormat(): ?string
+    {
+        $phone = null;
+        if ($this->phone) {
+            $phone = Utils::extract_cz_phone_number($this->phone);
+        }
+        return $phone;
+    }
+
     private function hydrate(array|object $data)
     {
         $fields = ['room_id', 'name', 'no', 'phone'];
-        if (is_array($data))
-        {
-            foreach ($fields as $field)
-            {
+        if (is_array($data)) {
+            foreach ($fields as $field) {
                 if (array_key_exists($field, $data))
                     $this->{$field} = $data[$field];
             }
-        }
-        else
-        {
-            foreach ($fields as $field)
-            {
+        } else {
+            foreach ($fields as $field) {
                 if (property_exists($data, $field))
                     $this->{$field} = $data->{$field};
             }
         }
+        if (!Utils::str_null_or_empty($data->phone)) {
+            $this->phone = Utils::format_cz_phone_number($this->phone);
+        }
     }
 
-    public function insert() : bool
+    public function insert(): bool
     {
-        $query = "INSERT INTO ".self::DB_TABLE." (`name`, `no`, `phone`) VALUES (:name, :no, :phone)";
-        $stmt = PDOProvider::get()->prepare($query);
-        $result = $stmt->execute(['name'=>$this->name, 'no'=>$this->no, 'phone'=>$this->phone]);
-        if (!$result)
-            return false;
-
-        $this->room_id = PDOProvider::get()->lastInsertId();
-        return true;
+        $array = Utils::get_obj_props($this, ['room_id']);
+        $this->prepare_for_database($array);
+        $result = Utils::insert(
+            PDOProvider::get(),
+            self::DB_TABLE,
+            $array
+        );
+        if ($result) {
+            $this->room_id = PDOProvider::get()->lastInsertId();
+        }
+        return $result;
     }
 
-    public function update() : bool
+    private static function prepare_for_database(array|Room &$data)
+    {
+        if (is_array($data)) {
+            if (array_key_exists(self::PHONE, $data) && $data[self::PHONE]) {
+                $data[self::PHONE] = Utils::extract_cz_phone_number($data[self::PHONE]);
+            }
+        } else {
+            $data->phone = $data->getPhoneInDbFormat();
+        }
+    }
+
+    public function update(): bool
     {
         if (!isset($this->room_id) || !$this->room_id)
             throw new Exception("Cannot update model without ID");
 
-        $query = "UPDATE ".self::DB_TABLE." SET `name` = :name, `no` = :no, `phone` = :phone WHERE `room_id` = :roomId";
-        $stmt = PDOProvider::get()->prepare($query);
-        return $stmt->execute(['roomId'=>$this->room_id, 'name'=>$this->name, 'no'=>$this->no, 'phone'=>$this->phone]);
+        $array = Utils::get_obj_props($this, [self::ID]);
+        $this->prepare_for_database($array);
+
+        return Utils::update(
+            PDOProvider::get(),
+            self::DB_TABLE,
+            $array,
+            where: '`' . self::ID . "`={$this->room_id}"
+        );
     }
 
-    public function delete() : bool
+    public function delete(): bool
     {
         return self::deleteByID($this->room_id);
     }
 
-    public static function deleteByID(int $roomId) : bool
+    public static function deleteByID(int $roomId): bool
     {
-        $query = "DELETE FROM `".self::DB_TABLE."` WHERE `room_id` = :roomId";
-        $stmt = PDOProvider::get()->prepare($query);
-        return $stmt->execute(['roomId'=>$roomId]);
+        return Utils::delete(PDOProvider::get(), self::DB_TABLE, where: "`room_id`=$roomId");
     }
 
-    public function validate(&$errors = []) : bool
+    public function validate(&$errors = []): bool
     {
-        if (!isset($this->name) || (!$this->name))
-            $errors['name'] = 'Jméno nesmí být prázdné';
+        $pdo = PDOProvider::get();
+        if (($error = Utils::validate_name(
+            $this->name,
+            'Název',
+            NameValidation::USER_NAME
+        ))) {
+            $errors['name'] = $error;
+        }
 
-        if (!isset($this->no) || (!$this->no))
+        $notRoomIdSql = $this->room_id !== null ? " AND `room_id`!={$this->room_id}" : "";
+
+
+        if (!isset($this->no) || (!$this->no)) {
             $errors['no'] = 'Číslo musí být vyplněno';
+        } elseif (!preg_match('/^[0-9]+$/', $this->no)) {
+            $errors['no'] = "Číslo musí být číslem";
+        } elseif (
+            ($stmt = Utils::select(
+                $pdo,
+                columns: ['room_id'],
+                from: self::DB_TABLE,
+                where: '`no`=?' . $notRoomIdSql,
+                executeArgs: [$this->no]
+            ))
+            && $stmt->rowCount() !== 0
+        ) {
+            $errors['no'] = 'Číslo musí být unikátní';
+        }
+        if ($this->phone !== null) {
+
+            if (!Utils::is_valid_cz_phone_number($this->phone)) {
+                $errors['phone'] = 'Telefon má nesprávný formát. Př.: +420 123 456 789';
+            } elseif ((($stmt = Utils::select(
+                $pdo,
+                columns: ['room_id'],
+                from: self::DB_TABLE,
+                where: '`phone`=?' . $notRoomIdSql,
+                executeArgs: [$this->getPhoneInDbFormat()]
+            )) && $stmt->rowCount() !== 0)) {
+                $errors['phone'] = 'Telefon musí být unikátní';
+            }
+        }
 
         return count($errors) === 0;
     }
 
-    public static function readPost() : self
+    public static function readPost(): self
     {
         $room = new Room();
         $room->room_id = filter_input(INPUT_POST, 'room_id', FILTER_VALIDATE_INT);
 
-        $room->name = filter_input(INPUT_POST, 'name');
-        if ($room->name)
-            $room->name = trim($room->name);
+        $name = filter_input(INPUT_POST, 'name');
+        if ($name !== null && $name !== false) {
+            $room->name = trim($name);
+        }
 
-        $room->no = filter_input(INPUT_POST, 'no');
-        if ($room->no)
-            $room->no = trim($room->no);
+        $no = filter_input(INPUT_POST, 'no');
+        if ($no !== false && $no !== null) {
+            $room->no = trim($no);
+        }
 
-        $room->phone = filter_input(INPUT_POST, 'phone');
-        if ($room->phone)
-            $room->phone = trim($room->phone);
-        if (!$room->phone)
-            $room->phone = null;
+        $phone = filter_input(INPUT_POST, 'phone');
+        if ($phone !== false && $phone !== null) {
+            if (($phone = trim($phone)) !== "") {
+                $room->phone = $phone;
+            }
+        }
 
         return $room;
     }
 }
-

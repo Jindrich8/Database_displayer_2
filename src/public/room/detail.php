@@ -2,10 +2,12 @@
 session_start();
 require_once __DIR__ . "/../../bootstrap/bootstrap.php";
 
-class RoomDetailPage extends BaseLoggedInPage
+class RoomDetailPage extends DetailPage
 {
     private $room;
     private $employees;
+
+
 
     protected function prepare(): void
     {
@@ -20,9 +22,13 @@ class RoomDetailPage extends BaseLoggedInPage
         if (!$this->room)
             throw new NotFoundException();
 
-
-        $stmt = PDOProvider::get()->prepare("SELECT e.surname, e.name, e.employee_id FROM employee e WHERE e.room = :roomId ORDER BY e.surname, e.name");
-        $stmt->execute(['roomId' => $roomId]);
+        $stmt = Utils::select(
+            PDOProvider::get(),
+            columns: [Employee::SURNAME, Employee::NAME, Employee::ID],
+            from: Employee::DB_TABLE,
+            where: '`' . Employee::ROOM . "`={$this->room->room_id}",
+            sorting: [Employee::SURNAME => 'ASC', Employee::NAME => 'ASC']
+        );
         $this->employees = $stmt->fetchAll();
 
         $this->title = "Detail místnosti {$this->room->no}";
@@ -33,7 +39,11 @@ class RoomDetailPage extends BaseLoggedInPage
         //prezentovat data
         return MustacheProvider::get()->render(
             'roomDetail',
-            ['room' => $this->room, 'employees' => $this->employees]
+            [
+                'room' => $this->room,
+                'employees' => $this->employees,
+                'userIsAdmin' => $this->get_user()->admin
+            ]
         );
     }
 }

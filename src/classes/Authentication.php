@@ -4,8 +4,7 @@ trait Authentication
     protected function authenticate(?Employee $user): void
     {
         if (!$user) {
-            header("Location: /login.php");
-            exit;
+            Utils::redirect_to_page('/login.php');
         }
     }
 }

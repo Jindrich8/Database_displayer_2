@@ -9,7 +9,7 @@ class Employee
     public ?string $name;
     public ?string $surname;
     public ?string $job;
-    public ?string $wage;
+    public ?int $wage;
     public ?int $room;
     public ?int $admin = 0;
     public ?string $login;
@@ -25,56 +25,27 @@ class Employee
     public const PASSWORD = 'password';
     public const ADMIN = 'admin';
 
-    public const FIELDS_NO_ID_PASSWORD = [
-        self::NAME,
-        self::SURNAME,
+    public const FIELDS_NO_ID_PASSWORD_NAME_SURNAME = [
+
         self::JOB,
         self::WAGE,
         self::ROOM,
         self::LOGIN,
-        self::ADMIN,
+        self::ADMIN
     ];
 
-    public const FIELDS_NO_ID = [
-        ...self::FIELDS_NO_ID_PASSWORD,
-        self::PASSWORD,
-    ];
-    public const FIELDS_NO_PASSWORD = [
-        self::ID,
-        ...self::FIELDS_NO_ID_PASSWORD
-    ];
     public const FIELDS = [
         self::ID,
-        ...self::FIELDS_NO_ID
+        self::NAME,
+        self::SURNAME,
+        ...self::FIELDS_NO_ID_PASSWORD_NAME_SURNAME,
+        self::PASSWORD
     ];
 
-    private static function get_delete_query()
-    {
-        return "DELETE FROM `" . self::DB_TABLE
-            . "` WHERE `" . self::ID . "` = :" . self::ID;
-    }
-
-    private function get_update_query()
-    {
-
-        $fieldsStr = implode(",", array_map(function ($value) {
-            return "`{$value}` = :{$value}";
-        }, ($this->password ? self::FIELDS_NO_ID : self::FIELDS_NO_ID_PASSWORD)));
-
-        return "UPDATE " . self::DB_TABLE . " SET " . $fieldsStr . " WHERE `" . self::ID . "` = :" . self::ID;
-    }
-
-    private static function get_insert_query()
-    {
-        $fieldsStr = "(`" . implode("`,", self::FIELDS_NO_ID) . "`)";
-
-        return "INSERT INTO " . self::DB_TABLE
-            . $fieldsStr . "VALUES "
-            . $fieldsStr;
-    }
 
 
-    public function __construct(?int $employee_id = null, bool $admin = false, ?string $name = null, ?string $surname = null, ?string $job = null, ?string $wage = null, ?int $room = null, ?string $login = null, ?string $password = null)
+
+    public function __construct(?int $employee_id = null, bool $admin = false, ?string $name = null, ?string $surname = null, ?string $job = null, ?int $wage = null, ?int $room = null, ?string $login = null, ?string $password = null)
     {
         $this->employee_id = $employee_id;
         $this->name = $name;
@@ -87,54 +58,37 @@ class Employee
         $this->admin = $admin;
     }
 
-    private function get_fields($fields)
-    {
-        $fieldsData = [];
-        foreach ($fields as $field) {
-            $fieldsData[$field] = $this->{$field};
-        }
-        return $fieldsData;
-    }
-
     public static function findByID(int $id): ?self
     {
-        $pdo = PDOProvider::get();
-        $query =  "SELECT * FROM `" . self::DB_TABLE . "` WHERE `" . self::ID . "`= :" . self::ID;
-        $stmt = $pdo->prepare($query);
-        $stmt->execute([self::ID => $id]);
+        $employee = null;
+        if ($stmt = Utils::select(pdo: PDOProvider::get(), columns: [], from: self::DB_TABLE, where: '`' . self::ID . "`=$id")) {
+            if ($employeeData = $stmt->fetch()) {
+                $employee = self::create($employeeData);
+                $employee->employee_id = $id;
+            }
+        }
+        return $employee;
+    }
 
-        if ($stmt->rowCount() < 1)
-            return null;
-
+    public static function create($data): self
+    {
         $employee = new self();
-        $employee->hydrate($stmt->fetch());
-        $employee->employee_id = $id;
+        $employee->hydrate($data);
         return $employee;
     }
 
     /**
      * @return self[]
      */
-    public static function getAll($sorting = []): array
+    public static function getAll($sorting = [], $columns = []): array
     {
-        $sortSQL = "";
-        if (count($sorting)) {
-            $SQLchunks = [];
-            foreach ($sorting as $field => $direction)
-                $SQLchunks[] = "`{$field}` {$direction}";
-
-            $sortSQL = " ORDER BY " . implode(', ', $SQLchunks);
-        }
-
-        $pdo = PDOProvider::get();
-        $stmt = $pdo->prepare("SELECT * FROM `" . self::DB_TABLE . "`" . $sortSQL);
-        $stmt->execute([]);
+        $stmt = Utils::select(pdo: PDOProvider::get(), columns: $columns, from: self::DB_TABLE, sorting: $sorting);
 
         $employees = [];
-        while ($employeeData = $stmt->fetch()) {
-            $employee = new self();
-            $employee->hydrate($employeeData);
-            $employees[] = $employee;
+        if ($stmt) {
+            while ($employeeData = $stmt->fetch()) {
+                $employees[] = self::create($employeeData);
+            }
         }
 
         return $employees;
@@ -155,24 +109,70 @@ class Employee
         }
     }
 
-    public function insert(): bool
+    public static function read_and_validate(?Employee &$employee, ?array &$errors, ?array &$keys, int $userId, bool $passwordRequired = true)
     {
-        $stmt = PDOProvider::get()->prepare(self::get_insert_query());
-        $result = $stmt->execute($this->get_fields(self::FIELDS_NO_ID));
-        if (!$result)
-            return false;
-
-        $this->employee_id = PDOProvider::get()->lastInsertId();
-        return true;
+        $employee = Employee::readPost();
+        $employee->validate($errors,$userId, passwordRequired: $passwordRequired);
+        if (filter_input(INPUT_POST, 'password') !== filter_input(INPUT_POST, 'confirmPassword')) {
+            $errors['confirmPassword'] = "Hesla se musí shodovat";
+        }
+        $keys = Utils::filter_input_integers_array(INPUT_POST, "keys");
+        if ($keys === false) {
+            $errors['keys'] = "Vybrány invalidní klíče";
+        } elseif (!in_array($employee->room, $keys)) {
+            $errors['keys'] = "Zaměstnanec musí mít alespoň klíč ke své místnosti";
+        }
     }
 
-    public function update(): bool
+    public function insert_keys(array $keys, bool &$success)
+    {
+        Utils::safe_query(
+            PDOProvider::get(),
+            "INSERT INTO `key` (`employee`,`room`) VALUES ({$this->employee_id},"
+                . implode("),({$this->employee_id},", $keys)
+                . ");",
+            $success
+        );
+    }
+
+    public function insert(): bool
+    {
+        $result = Utils::insert(PDOProvider::get(), self::DB_TABLE, Utils::get_obj_props($this, [self::ID]));
+        if ($result) {
+            $this->employee_id = PDOProvider::get()->lastInsertId();
+        }
+        return $result;
+    }
+
+    public static function update_by_id(array $values, int $id): bool
+    {
+        return Utils::update(
+            PDOProvider::get(),
+            self::DB_TABLE,
+            $values,
+            where: '`' . self::ID . "`={$id}"
+        );
+    }
+
+
+    public function update(array $values = []): bool
     {
         if (!isset($this->employee_id) || !$this->employee_id)
             throw new Exception("Cannot update model without ID");
 
-        $stmt = PDOProvider::get()->prepare($this->get_update_query());
-        return $stmt->execute($this->get_fields($this->password ? self::FIELDS : self::FIELDS_NO_PASSWORD));
+        if (!$values) {
+            $unset = [self::ID];
+            if (!$this->password) {
+                $unset[] = self::PASSWORD;
+            }
+            $values = Utils::get_obj_props($this, $unset);
+        } else {
+            foreach ($values as $key => $value) {
+                $values[$value] = $this->{$value};
+                unset($values[$key]);
+            }
+        }
+        return self::update_by_id($values, $this->employee_id);
     }
 
     public function set_password($password)
@@ -187,23 +187,56 @@ class Employee
 
     public static function deleteByID(int $employeeId): bool
     {
-        $stmt = PDOProvider::get()->prepare(self::get_delete_query());
-        return $stmt->execute([self::ID => $employeeId]);
+        return Utils::delete(PDOProvider::get(), self::DB_TABLE, where: '`' . self::ID . "`=$employeeId");
     }
 
-    public function validate(&$errors = [], bool $passwordRequired = true): bool
+
+
+    public function validate(&$errors = [],int $userId, bool $passwordRequired = true): bool
     {
-        if (!isset($this->room))
+        $pdo = PdoProvider::get();
+        if (!isset($this->room)) {
             $errors['room'] = 'Místnost musí být vyplněna';
+        } elseif (
+            ($stmt = Utils::select(
+                pdo: $pdo,
+                columns: [Room::ID],
+                from: Room::DB_TABLE,
+                fromAlias: 'r',
+                where: "`r`.`" . Room::ID . "`={$this->room}"
+            ))
+            && $stmt->rowCount() !== 1
+        ) {
+            $errors['room'] = 'Místnost musí existovat';
+        }
 
-        if (!isset($this->login) || !$this->login)
-            $errors['login'] = 'Login musí být vyplněn';
+        if (($error = Utils::validate_name(
+            $this->login,
+            fieldName: 'Login',
+            type: NameValidation::USER_NAME
+        ))) {
+            $errors['login'] = $error;
+        } elseif (($stmt = Utils::select(
+            pdo: $pdo,
+            columns: [self::ID],
+            from: self::DB_TABLE,
+            where: '`' . self::LOGIN . "`=?" . ($this->employee_id !== null ? " AND `" . self::ID . "`!={$this->employee_id}" : ""),
+            executeArgs: [$this->login]
+        )) && $stmt->rowCount() !== 0) {
+            $errors['login'] = "Login musí být unikátní";
+        }
 
-        if ($passwordRequired && (!isset($this->password) || !$this->password))
+        if ($passwordRequired && Utils::str_null_or_empty($this->password)) {
             $errors['password'] = 'Heslo musí být vyplněno';
+        }
 
-        if (!isset($this->job) || !$this->job)
-            $errors['job'] = 'Pozice musí být vyplněna';
+        if (($error = Utils::validate_name(
+            $this->job,
+            fieldName: 'Pozice',
+            type: NameValidation::USER_NAME
+        ))) {
+            $errors['job'] = $error;
+        }
 
         if (!isset($this->wage))
             $errors['wage'] = 'Plat musí být vyplněn';
@@ -211,15 +244,28 @@ class Employee
             $errors['wage'] = 'Plat musí být větší nebo rovno 0';
         }
 
-        if ($this->admin === null) {
+        if ($userId === $this->employee_id) {
+            if ((bool)$this->admin !== true) {
+                $this->admin = true;
+                $errors['admin'] = 'Nemůžeš měnit svojí roli';
+            }
+        } elseif ($this->admin === null) {
             $errors['admin'] = 'Admin má neplatnou hodnotu';
         }
-
-        if (!isset($this->surname) || !$this->surname)
-            $errors['surname'] = 'Příjmení musí být vyplněno';
-
-        if (!isset($this->name) || !$this->name)
-            $errors['name'] = 'Jméno musí být vyplněno';
+        if (($error =  Utils::validate_name(
+            $this->surname,
+            fieldName: 'Příjmení',
+            type: NameValidation::PERSON_NAME
+        ))) {
+            $errors['surname'] = $error;
+        }
+        if (($error =  Utils::validate_name(
+            $this->name,
+            fieldName: 'Jméno',
+            type: NameValidation::PERSON_NAME
+        ))) {
+            $errors['name'] = $error;
+        }
 
         return count($errors) === 0;
     }
@@ -244,13 +290,15 @@ class Employee
         $employee->surname = self::readPostStr(self::SURNAME);
 
         $employee->login = self::readPostStr(self::LOGIN);
+        if ($employee->login) {
+        }
 
         $employee->password = self::readPostStr(self::PASSWORD);
         if ($employee->password) {
             $employee->password = password_hash($employee->password, PASSWORD_DEFAULT);
         }
 
-        $employee->admin  = filter_input(INPUT_POST, "admin", FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+        $employee->admin = filter_input(INPUT_POST, 'admin', FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
         $employee->wage = Utils::filter_input_null_fail(INPUT_POST, self::WAGE, FILTER_VALIDATE_INT);
 

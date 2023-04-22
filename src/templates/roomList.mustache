@@ -1,18 +1,37 @@
+{{{modal}}}
+<div class='scrollable-table-container'>
 <table class='table table-striped'>
+<thead class='position-sticky top-0'>
     <tr>
-        <th>Name</th>
-        <th>No.</th>
-        <th>Phone</th>
+         <th data-sort='{{sorting.name}}' data-sort-indx='{{sortingorder.name}}' data-col='{{colsindexes.name}}'>
+        Jméno
+        </th>
+        {{#columns.no}}
+        <th data-sort='{{sorting.no}}' data-sort-indx='{{sortingorder.no}}' data-col='{{colsindexes.no}}'>
+        Číslo
+        </th>
+        {{/columns.no}}
+        {{#columns.phone}}
+        <th data-sort='{{sorting.phone}}' data-sort-indx='{{sortingorder.phone}}' data-col='{{colsindexes.phone}}'>
+        Telefon
+        </th>
+        {{/columns.phone}}
         <th>Actions</th>
     </tr>
+    </thead>
+    <tbody>
 
     {{#rooms}}
     <tr>
         <td>
             <a href='detail.php?roomId={{room_id}}'>{{name}}</a>
         </td>
+        {{#columns.no}}
         <td>{{no}}</td>
+        {{/columns.no}}
+        {{#columns.phone}}
         <td>{{#phone}}{{phone}}{{/phone}}{{^phone}}&mdash;{{/phone}}</td>
+        {{/columns.phone}}
         <td>
             <form action="update.php" method="get" style="display: inline-block">
                 <input type="hidden" name="roomId" value="{{room_id}}">
@@ -28,8 +47,8 @@
     {{^rooms}}
         <tr><td colspan="3">Databáze je prázdná</td></tr>
     {{/rooms}}
-
+</tbody>
 </table>
-
+</div>
 <a href="create.php" class="btn btn-primary {{^admin}}disabled{{/admin}}" >Založit novou místnost</a>
 

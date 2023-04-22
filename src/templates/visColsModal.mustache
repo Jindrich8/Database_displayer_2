@@ -1,0 +1,32 @@
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+  Zobrazené sloupce
+</button>
+<div class="modal" id='exampleModal' tabindex="-1" aria-hidden='true'>
+    <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Zobrazené sloupce</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="document.querySelector('#visiblecolumnsform').reset()"></button>
+                </div>
+                
+                    <div class="modal-body">
+                    <form id="viscolsform" method='GET'>
+                       {{{content}}}
+                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="document.querySelector('#viscolsform').reset()">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </form
+                    </div>
+                
+            </div>
+    </div>
+</div>
+</div>
+<script type="module">
+import {getColumnSortBtnClickListener,getFormSubmitDataSenderListener} from "/../js/tableVisColsAndSortingHelper.js";
+const form = document.querySelector('#viscolsform');
+form.addEventListener('submit',getFormSubmitDataSenderListener(form));
+
+const sortListener =getColumnSortBtnClickListener();
+const tr =document.querySelector('tr:has(>th[data-sort])');
+tr.addEventListener('click',sortListener);
+</script>

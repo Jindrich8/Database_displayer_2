@@ -1,0 +1,30 @@
+*[data-sort]:after {
+    display: inline-block;
+    content: url('/../resources/sarrows.svg');
+    height: 1.25rem;
+    aspect-ratio: 1/1;
+    padding-left: 0.25rem;
+}
+
+
+*[data-sort='ASC' i]:after {
+    content: url('/../resources/suparrow.svg');
+}
+
+*[data-sort='DESC' i]:after {
+    content: url('/../resources/sdownarrow.svg');
+}
+
+*[data-sort]:before {
+    font-size: small;
+    content: attr(data-sort-indx);
+}
+
+.scrollable-table-container {
+    max-height: 78vh;
+    overflow: auto;
+}
+
+.scrollable-table-container table thead.position-sticky {
+    background-color: white;
+}
