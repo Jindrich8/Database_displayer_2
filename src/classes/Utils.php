@@ -11,11 +11,6 @@ class Utils
         return $res === false ? null : $res;
     }
 
-    public static function str_empty(string|null $str)
-    {
-        return $str === "";
-    }
-
     public static function filter_input_integers_array(int $type, string $var_name): mixed
     {
         $keys = filter_input($type, $var_name, FILTER_VALIDATE_INT, FILTER_FORCE_ARRAY);
