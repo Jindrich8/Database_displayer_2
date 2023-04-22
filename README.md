@@ -1,6 +1,5 @@
 # Database_displayer_2
 Prohlížeč databáze postavený na OOP PHP 8.1 a mysql.  
-**Nejnovější verze se nachází v branch latest**.  
 
 ## Zprovoznění
 1. nainstalovat `composer` - https://getcomposer.org/download/
