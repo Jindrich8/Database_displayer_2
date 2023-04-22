@@ -24,7 +24,7 @@
 <script type="module">
 import {getColumnSortBtnClickListener,getFormSubmitDataSenderListener} from "/../js/tableVisColsAndSortingHelper.js";
 const form = document.querySelector('#viscolsform');
-form.addEventListener('submit',getFormSubmitDataSenderListener(form));
+form.addEventListener('submit',getFormSubmitDataSenderListener(form,'columns',''));
 
 const sortListener =getColumnSortBtnClickListener();
 const tr =document.querySelector('tr:has(>th[data-sort])');

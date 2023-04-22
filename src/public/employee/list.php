@@ -14,7 +14,7 @@ class EmployeesPage extends ListPage
         $this->columnToNum = array_flip($this->numToColumn);
     }
 
-   
+
 
     protected function colNumToName(int $col): ?string
     {
@@ -25,9 +25,9 @@ class EmployeesPage extends ListPage
         return $name;
     }
 
-    protected function transformColumnsBeforeSorting(array &$columns)
+    protected function transformColumnsBeforeSorting(?array &$columns)
     {
-        if (!$columns) {
+        if ($columns === null) {
             $columns = [
                 $this->columnToNum[Employee::JOB] => Employee::JOB,
                 $this->columnToNum[Employee::WAGE] => Employee::WAGE,
@@ -41,7 +41,7 @@ class EmployeesPage extends ListPage
     /**
      * @param int[] $columns
      */
-    protected function getData(array $sorting, array $columns): string
+    protected function getData(array $sorting, ?array $columns): string
     {
 
         unset($columns[count($this->columnToNum)]);

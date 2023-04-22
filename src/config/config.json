@@ -1,6 +1,5 @@
 {
   "app": {
-    "debug": "true",
     "lang": "cs"
   },
   "db": {

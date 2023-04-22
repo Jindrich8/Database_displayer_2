@@ -3,7 +3,7 @@ const getURLParams = () => {
     return new URLSearchParams(window.location.search);
 };
 
-const getFormSubmitDataSenderListener = (form) => (e) => {
+const getFormSubmitDataSenderListener = (form, defaultKey, defaultContent) => (e) => {
     e.preventDefault();
     const formData = new FormData(form);
 
@@ -17,10 +17,12 @@ const getFormSubmitDataSenderListener = (form) => (e) => {
         }
     }
     const params = getURLParams();
+    if (Object.entries(data).length === 0) {
+        params.set(defaultKey, defaultContent);
+    }
     for (const [key, value] of Object.entries(data)) {
         params.set(key, value);
     }
-    console.log(params.toString());
     window.location.search = params;
 };
 

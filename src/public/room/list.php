@@ -19,9 +19,9 @@ class RoomsPage extends ListPage
         return $this->numToColumn[$col] ?? null;
     }
 
-    protected function transformColumnsBeforeSorting(array &$columns)
+    protected function transformColumnsBeforeSorting(?array &$columns)
     {
-        if (!$columns) {
+        if ($columns === null) {
             $columns = [
 
                 $this->columnToNum[Room::NO] => Room::NO,
@@ -31,7 +31,7 @@ class RoomsPage extends ListPage
         $columns[count($this->columnToNum)] = Room::NAME;
     }
 
-    protected function getData(array $sorting, array $columns): string
+    protected function getData(array $sorting, ?array $columns): string
     {
         //získat data
         $columns[] = Room::ID;

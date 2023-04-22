@@ -2,7 +2,7 @@
 abstract class ListPage extends BaseLoggedInPage
 {
     private $alert = [];
-    private $columns = [];
+    private $columns = null;
     private $sorting = [];
 
     protected function extraHTMLHeaders(): string
@@ -53,6 +53,9 @@ abstract class ListPage extends BaseLoggedInPage
             ];
         }
         $columns = filter_input(INPUT_GET, 'columns');
+        if ($columns !== null) {
+            $this->columns = [];
+        }
         if ($columns !== null && $columns !== false) {
             $columns = filter_var_array(explode(',', $columns), FILTER_VALIDATE_INT);
             foreach ($columns as $column) {
@@ -80,11 +83,11 @@ abstract class ListPage extends BaseLoggedInPage
     /**
      * @param int[] $columns
      */
-    abstract protected function getData(array $sorting, array $columns): string;
+    abstract protected function getData(array $sorting, ?array $columns): string;
 
     abstract protected function colNumToName(int $col): ?string;
 
-    protected function transformColumnsBeforeSorting(array &$columns)
+    protected function transformColumnsBeforeSorting(?array &$columns)
     {
     }
 
